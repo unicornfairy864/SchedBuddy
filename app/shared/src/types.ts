@@ -116,7 +116,7 @@ export interface PlacedOccurrence {
 export interface PackDayResult {
   placed: PlacedOccurrence[];
   laneCount: number; // 所需排数（含固定排）
-  /** 最底排（固定排）的空闲区间，供绿色"空闲"底绘制 [ [startMin,endMin], ... ] */
+  /** 排0（最底排）空闲区间，供绿色"空闲"底绘制 [ [startMin,endMin], ... ] */
   row0Free: [number, number][];
 }
 

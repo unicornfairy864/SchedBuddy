@@ -157,6 +157,22 @@ function check(name, fn) {
   // row0 空闲 = 0-480, 600-780, 870-1440
   assert.deepStrictEqual(res.row0Free, [[0, 480], [600, 780], [870, 1440]]);
   check('packDay 按重要度堆叠+row0空闲', () => {});
+
+  // 无空排：仅临时日程（如 9/12 ACM）只占 1 排
+  const solo = packDay([mk('ACM 校赛', 'temporary', 540, 660, '#9B7EDE')]);
+  assert.strictEqual(solo.laneCount, 1);
+  assert.strictEqual(solo.placed[0].lane, 0);
+  assert.deepStrictEqual(solo.row0Free, [[0, 540], [660, 1440]]);
+  check('仅临时日程占1排(无空排)', () => {});
+
+  // 混排：可选课不与固定课重叠 → 与固定课共用同一排
+  const mixed = packDay([
+    mk('高等数学', 'fixed', 480, 600, '#E4574E'),
+    mk('水课(14点)', 'optional', 840, 900, '#F5A623'),
+  ]);
+  assert.strictEqual(mixed.laneCount, 1);
+  assert.ok(mixed.placed.every((p) => p.lane === 0));
+  check('无重叠可选与固定同排(无空排)', () => {});
 }
 
 // ---- validate ----
