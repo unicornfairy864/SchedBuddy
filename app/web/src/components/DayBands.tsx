@@ -50,7 +50,7 @@ interface Props {
 
 export default function DayBands({ bands, schedules, nowMin, density, hoKey, onHover }: Props) {
   const laneH = density === 'day' ? 52 : 31;
-  const style = { '--lane-h': `${laneH}px`, '--ruler-h': '26px' } as CSSProperties;
+  const style = { '--lane-h': `${laneH}px`, '--ruler-h': '24px' } as CSSProperties;
   const focus = hoKey != null;
 
   // key -> {occ, schedule} 快速查表，供容器级 hover 代理使用

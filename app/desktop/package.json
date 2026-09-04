@@ -1,6 +1,6 @@
 {
   "name": "@schedbuddy/desktop",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "private": true,
   "description": "桌面壳：Electron 主进程 = 内嵌启动后端 + 打开本地窗口（本机为唯一可写主机，局域网仅只读）。Electron 相关依赖在 v0.4 桌面壳里程碑安装（体积大，另行确认）。",
   "main": "dist/main.cjs",
