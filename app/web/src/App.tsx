@@ -162,7 +162,6 @@ export default function App() {
       <BlockTooltip data={tip} />
 
       <footer className="app-foot">
-        <span>最底排 = 固定日程（浅绿为空闲）· 上排按重要度堆叠</span>
         <span className="tip-hint">hover 方块查看详情{meta?.readOnly ? ' · 只读模式（请在桌面主机编辑）' : ''}</span>
       </footer>
     </div>

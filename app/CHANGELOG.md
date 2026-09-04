@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.5] - 2026-09-04
+
+### Changed（验收 ③）
+- 删除页脚说明文案「最底排 = 固定日程（浅绿为空闲）· 上排按重要度堆叠」。
+
 ## [0.2.4] - 2026-09-04
 
 ### Changed（验收 ② 修订：日带高度按内容）
