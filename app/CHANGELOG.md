@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.9] - 2026-09-04
+
+### Fixed（验收 ⑥ 修订：淡出修复）
+- 悬浮窗淡出改用纯 CSS 过渡（进场挂载下一帧加 `.in`，离场移除 `.in` 触发 140ms 淡出），移除与“上/下/左展开”动画规则的冲突。
+
 ## [0.2.8] - 2026-09-04
 
 ### Changed（验收 ⑥）

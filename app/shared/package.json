@@ -1,6 +1,6 @@
 {
   "name": "@schedbuddy/shared",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "private": true,
   "description": "共享层：类型定义 + 规则引擎 + 冲突/排布算法（浏览器与 Node 共用，零运行时依赖）。",
   "main": "dist/index.cjs",

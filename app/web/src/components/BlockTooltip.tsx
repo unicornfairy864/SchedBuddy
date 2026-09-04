@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { Occurrence, Schedule } from '../../../shared/src/types';
 import { TYPE_CN } from '../../../shared/src/types';
 import { allSegmentsDesc, ruleSummary, dateWindowDesc } from '../format';
@@ -10,6 +11,17 @@ export interface TooltipData {
 }
 
 export default function BlockTooltip({ data, hidden }: { data: TooltipData | null; hidden: boolean }) {
+  // 进场：先以 opacity:0 挂载，下一帧加 .in 触发淡入过渡；离场：去掉 .in 触发淡出
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    if (hidden) {
+      setEntered(false);
+      return;
+    }
+    const raf = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(raf);
+  }, [hidden]);
+
   if (!data) return null;
   const { occ, schedule: s, x, y } = data;
   const current = dateWindowDesc(occ.date, occ.startMin, occ.endMin);
@@ -22,7 +34,7 @@ export default function BlockTooltip({ data, hidden }: { data: TooltipData | nul
 
   return (
     <div
-      className={`sb-tip${below ? ' below' : ''}${left ? ' left' : ''}${hidden ? ' out' : ''}`}
+      className={`sb-tip${below ? ' below' : ''}${left ? ' left' : ''}${entered && !hidden ? ' in' : ''}`}
       style={{ top: below ? y + 22 : y - 8, left: clampedX }}
     >
       <div className="tip-head">

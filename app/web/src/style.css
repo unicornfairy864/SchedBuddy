@@ -245,11 +245,11 @@ body {
   border-radius: 12px; padding: 14px 16px;
   box-shadow: 0 14px 34px rgba(10, 20, 30, 0.4);
   font-size: 14.5px;
-  animation: tipin .12s var(--ease) both;
+  opacity: 0;
+  transition: opacity .14s ease;
   pointer-events: none;
 }
-.sb-tip.out { animation: none; opacity: 0; }
-.sb-tip { transition: opacity .14s ease; }
+.sb-tip.in { opacity: 1; }
 .sb-tip::after {
   content: ''; position: absolute; left: 50%; bottom: -5px;
   transform: translateX(-50%) rotate(45deg);
@@ -288,13 +288,6 @@ body {
 /* ---------- 动画 ---------- */
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes grow { from { opacity: 0; transform: scaleX(0.9); } to { opacity: 1; transform: none; } }
-@keyframes tipin { from { opacity: 0; transform: translate(-50%, -94%); } to { opacity: 1; transform: translate(-50%, -100%); } }
-@keyframes tipdown { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
-@keyframes tipin-left { from { opacity: 0; transform: translate(calc(-100% + 44px), -94%); } to { opacity: 1; transform: translate(calc(-100% + 44px), -100%); } }
-@keyframes tipdown-left { from { opacity: 0; transform: translate(calc(-100% + 44px), -6px); } to { opacity: 1; transform: translate(calc(-100% + 44px), 0); } }
-.sb-tip.below { animation-name: tipdown; }
-.sb-tip.left { animation-name: tipin-left; }
-.sb-tip.below.left { animation-name: tipdown-left; }
 
 /* 类型点缀色 */
 .t-fixed { --tcol: #e4574e; }
