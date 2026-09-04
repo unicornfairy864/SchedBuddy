@@ -50,7 +50,7 @@ interface Props {
 
 export default function DayBands({ bands, schedules, nowMin, density, hoKey, onHover }: Props) {
   const laneH = density === 'day' ? 52 : 31;
-  const style = { '--lane-h': `${laneH}px`, '--ruler-h': '22px' } as CSSProperties;
+  const style = { '--lane-h': `${laneH}px`, '--ruler-h': '26px' } as CSSProperties;
   const focus = hoKey != null;
 
   // key -> {occ, schedule} 快速查表，供容器级 hover 代理使用
@@ -185,9 +185,11 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
                     {HOURS.map((h) => {
                       const t = h * 60;
                       if (t < tr.start || t > tr.end) return null;
+                      const isLabel = h % 2 === 0;
+                      const edge = isLabel && t === tr.start ? ' edge-l' : isLabel && t === tr.end ? ' edge-r' : '';
                       return (
-                        <span key={h} className="ruler-tick" style={{ left: x(t) }}>
-                          {h % 2 === 0 && <i>{minutesToHM(t)}</i>}
+                        <span key={h} className={`ruler-tick${edge}`} style={{ left: x(t) }}>
+                          {isLabel && <i>{minutesToHM(t)}</i>}
                         </span>
                       );
                     })}

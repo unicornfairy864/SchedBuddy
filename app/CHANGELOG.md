@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.12] - 2026-09-04
+
+### Changed（UI 微调）
+- 标尺数字更显眼：字号 12.5px 加粗加深，居中于刻度竖线正下方；首刻度数字移至竖线右侧、尾刻度数字右缘贴线向左，防止溢出。
+
 ## [0.2.11] - 2026-09-04
 
 ### Fixed

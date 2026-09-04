@@ -207,13 +207,18 @@ body {
   position: relative; flex: none; height: var(--ruler-h); margin-top: 3px;
 }
 .ruler-tick {
-  position: absolute; top: 0; width: 1px; height: 7px; background: #c4d0dc;
+  position: absolute; top: 0; width: 1px; height: 8px; background: #a9b8c6;
 }
 .ruler-tick i {
-  position: absolute; top: 10px; left: 4px;
-  font-size: 11px; font-style: normal; color: #8b98a6;
-  white-space: nowrap;
+  position: absolute; top: 10px; left: 50%;
+  font-size: 12.5px; font-weight: 700; font-style: normal;
+  color: #47586a;
+  transform: translateX(-50%); white-space: nowrap;
 }
+/* 首刻度：数字放在竖线右侧，防左侧溢出 */
+.ruler-tick.edge-l i { left: 4px; transform: none; }
+/* 尾刻度：数字右缘贴竖线向左延伸，防右侧溢出 */
+.ruler-tick.edge-r i { left: auto; right: 0; transform: none; }
 
 /* 无日程的日子：不渲染任何排，仅提示 */
 .band.empty .band-body { justify-content: center; padding: 10px 12px 10px 0; }
