@@ -28,3 +28,10 @@
 ## 4. 变更记录
 
 见 `app/CHANGELOG.md`（Keep a Changelog 风格，中文）。
+
+## 5. 文档同步规定
+
+功能 / 界面 / 规则 / 文档的任何修改，收尾时必须同步更新相应文档，保持“文档 = 现状”：
+- 项目总纲：`docs/项目说明.md`（与 `app/` 同级）；
+- 需求与决策：`app/docs/00-decisions.md`；架构/数据/UI/API：`app/docs/01~04`；
+- 更新日志：`app/CHANGELOG.md`（与版本提交同一次 commit）。

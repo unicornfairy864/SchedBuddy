@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.15] - 2026-09-04
+
+### Docs
+- 新建仓库根 `docs/项目说明.md`（全局要求与规定、已完成内容、未来规划）；新增全局规定：**任何修改后须同步更新项目文档**（同步写入 `app/docs/05-versioning.md` §5）。
+
 ## [0.2.14] - 2026-09-04
 
 ### Fixed
