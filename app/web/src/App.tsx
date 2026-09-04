@@ -67,11 +67,35 @@ export default function App() {
     return map;
   }, [schedules, visibleDates, meta?.termStart]);
 
-  const bands: Band[] = visibleDates.map((date) => ({
-    date,
-    pack: dayPacks.get(date)!,
-    isToday: date === today,
-  }));
+  // 渲染用「日带」列表：
+  //  - 周视图：每天一条完整 24h 日带；
+  //  - 日视图：拆成上午/下午两条半天带（自动裁剪首尾空余，跨 12 点的日程两段共享同 key = 同一整体）。
+  const bands: Band[] = useMemo(() => {
+    if (view === 'week') {
+      return visibleDates.map((date) => ({ date, pack: dayPacks.get(date)!, isToday: date === today }));
+    }
+    const date = anchor;
+    const pack = dayPacks.get(date);
+    if (!pack) return [];
+    const occs = pack.placed.map((p) => p.occ);
+    if (occs.length === 0) {
+      return [
+        { date, pack, isToday: date === today, range: { start: 0, end: 720 }, tag: '上午' },
+        { date, pack, isToday: date === today, range: { start: 720, end: 1440 }, tag: '下午' },
+      ];
+    }
+    const minStart = Math.min(...occs.map((o) => o.startMin));
+    const maxEnd = Math.max(...occs.map((o) => o.endMin));
+    const pad = 60;
+    const S = Math.max(0, minStart - pad);
+    const E = Math.min(1440, maxEnd + pad);
+    const hasMorning = occs.some((o) => o.startMin < 720 && o.endMin > 0);
+    const hasEvening = occs.some((o) => o.startMin < 1440 && o.endMin > 720);
+    const out: Band[] = [];
+    if (hasMorning) out.push({ date, pack, isToday: date === today, range: { start: S, end: 720 }, tag: '上午' });
+    if (hasEvening) out.push({ date, pack, isToday: date === today, range: { start: 720, end: E }, tag: '下午' });
+    return out;
+  }, [view, anchor, visibleDates, dayPacks, today]);
 
   const schedulesById = useMemo(() => new Map(schedules.map((s) => [s.id, s])), [schedules]);
 
