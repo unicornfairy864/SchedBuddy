@@ -213,6 +213,18 @@ body {
   white-space: nowrap;
 }
 
+/* 无日程的日子：不渲染任何排，仅提示 */
+.band.empty .band-body { justify-content: center; padding: 10px 12px 10px 0; }
+.empty-day {
+  color: #9aa7b4; font-size: 14.5px; text-align: center;
+  display: flex; align-items: center; justify-content: center;
+  height: 44px; width: 100%;
+  background:
+    repeating-linear-gradient(45deg, rgba(120, 140, 160, 0.03) 0 6px, transparent 6px 12px);
+  border-radius: 8px;
+}
+.bands.day .empty-day { height: 52px; font-size: 15.5px; }
+
 /* 半天带标签（上午/下午） */
 .band.half .band-gutter { justify-content: center; }
 .half-tag {

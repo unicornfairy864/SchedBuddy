@@ -46,7 +46,7 @@ interface Props {
 
 export default function DayBands({ bands, schedules, nowMin, density, hoKey, onHover }: Props) {
   const laneH = density === 'day' ? 52 : 31;
-  const style = { '--lane-h': `${laneH}px`, '--ruler-h': '20px' } as CSSProperties;
+  const style = { '--lane-h': `${laneH}px`, '--ruler-h': '22px' } as CSSProperties;
   const focus = hoKey != null;
 
   const handleEnter = (e: MouseEvent, occ: Occurrence) => {
@@ -63,6 +63,7 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
     <div className={`bands ${density}${focus ? ' focus' : ''}`} style={style} onMouseLeave={() => onHover(null, null)}>
       {bands.map((band) => {
         const pack = band.pack;
+        const hasOcc = pack.placed.length > 0;
         const tr = band.range ?? { start: 0, end: 1440 };
         const span = tr.end - tr.start;
         const x = (min: number) => `${((min - tr.start) / span) * 100}%`;
@@ -76,7 +77,7 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
         }
         const wd = weekdayOf(band.date);
         return (
-          <div className={`band${band.isToday ? ' today' : ''}${band.tag ? ` half ${band.tag}` : ''}`} key={band.date + (band.tag ?? '')}>
+          <div className={`band${band.isToday ? ' today' : ''}${band.tag ? ` half ${band.tag}` : ''}${hasOcc ? '' : ' empty'}`} key={band.date + (band.tag ?? '')}>
             <div className="band-gutter">
               {band.tag ? (
                 <>
@@ -93,66 +94,72 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
               )}
             </div>
             <div className="band-body">
-              <div className="lanes">
-                {HOURS.map((h) => {
-                  const t = h * 60;
-                  if (t <= tr.start || t >= tr.end) return null;
-                  return <div key={h} className="hour-line" style={{ left: x(t) }} />;
-                })}
-                {band.isToday && nowMin != null && nowMin > tr.start && nowMin < tr.end && (
-                  <div className="now-line" style={{ left: x(nowMin) }}>
-                    <span className="now-dot" />
+              {!hasOcc ? (
+                <div className="empty-day">本日无日程 · 全天空闲</div>
+              ) : (
+                <>
+                  <div className="lanes">
+                    {HOURS.map((h) => {
+                      const t = h * 60;
+                      if (t <= tr.start || t >= tr.end) return null;
+                      return <div key={h} className="hour-line" style={{ left: x(t) }} />;
+                    })}
+                    {band.isToday && nowMin != null && nowMin > tr.start && nowMin < tr.end && (
+                      <div className="now-line" style={{ left: x(nowMin) }}>
+                        <span className="now-dot" />
+                      </div>
+                    )}
+                    {rowLanes.map((lane) => {
+                      const items = (placedByLane.get(lane) ?? []).map((p) => p.occ);
+                      const isBase = lane === 0;
+                      return (
+                        <div className={`lane${isBase ? ' base' : ''}`} key={lane}>
+                          {isBase &&
+                            pack.row0Free
+                              .filter(([s, e]) => e > tr.start && s < tr.end)
+                              .map(([s, e], i) => (
+                                <div
+                                  key={i}
+                                  className="free"
+                                  style={{ left: x(Math.max(s, tr.start)), width: `${((Math.min(e, tr.end) - Math.max(s, tr.start)) / span) * 100}%` }}
+                                />
+                              ))}
+                          {items
+                            .filter((o) => o.endMin > tr.start && o.startMin < tr.end)
+                            .map((occ) => {
+                              const s = schedules.get(occ.scheduleId);
+                              if (!s) return null;
+                              const key = `${occ.date}|${occ.scheduleId}|${occ.startMin}`;
+                              const slim = occ.endMin - occ.startMin <= 30;
+                              return (
+                                <div
+                                  key={key}
+                                  className={`sb-block t-${s.type}${focus ? '' : ' idl'}${key === hoKey ? ' ho' : ''}${slim ? ' slim' : ''}`}
+                                  style={{ left: x(Math.max(occ.startMin, tr.start)), width: `${((Math.min(occ.endMin, tr.end) - Math.max(occ.startMin, tr.start)) / span) * 100}%`, background: s.color, color: textOn(s.color) }}
+                                  onMouseEnter={(e) => handleEnter(e, occ)}
+                                  onMouseMove={(e) => handleEnter(e, occ)}
+                                >
+                                  {!slim && <span className="blk-title">{s.title}</span>}
+                                </div>
+                              );
+                            })}
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-                {rowLanes.map((lane) => {
-                  const items = (placedByLane.get(lane) ?? []).map((p) => p.occ);
-                  const isBase = lane === 0;
-                  return (
-                    <div className={`lane${isBase ? ' base' : ''}`} key={lane}>
-                      {isBase &&
-                        pack.row0Free
-                          .filter(([s, e]) => e > tr.start && s < tr.end)
-                          .map(([s, e], i) => (
-                            <div
-                              key={i}
-                              className="free"
-                              style={{ left: x(Math.max(s, tr.start)), width: `${((Math.min(e, tr.end) - Math.max(s, tr.start)) / span) * 100}%` }}
-                            />
-                          ))}
-                      {items
-                        .filter((o) => o.endMin > tr.start && o.startMin < tr.end)
-                        .map((occ) => {
-                          const s = schedules.get(occ.scheduleId);
-                          if (!s) return null;
-                          const key = `${occ.date}|${occ.scheduleId}|${occ.startMin}`;
-                          const slim = occ.endMin - occ.startMin <= 30;
-                          return (
-                            <div
-                              key={key}
-                              className={`sb-block t-${s.type}${focus ? '' : ' idl'}${key === hoKey ? ' ho' : ''}${slim ? ' slim' : ''}`}
-                              style={{ left: x(Math.max(occ.startMin, tr.start)), width: `${((Math.min(occ.endMin, tr.end) - Math.max(occ.startMin, tr.start)) / span) * 100}%`, background: s.color, color: textOn(s.color) }}
-                              onMouseEnter={(e) => handleEnter(e, occ)}
-                              onMouseMove={(e) => handleEnter(e, occ)}
-                            >
-                              {!slim && <span className="blk-title">{s.title}</span>}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="ruler">
-                {HOURS.map((h) => {
-                  const t = h * 60;
-                  if (t < tr.start || t > tr.end) return null;
-                  return (
-                    <span key={h} className="ruler-tick" style={{ left: x(t) }}>
-                      {h % 2 === 0 && <i>{minutesToHM(t)}</i>}
-                    </span>
-                  );
-                })}
-              </div>
+                  <div className="ruler">
+                    {HOURS.map((h) => {
+                      const t = h * 60;
+                      if (t < tr.start || t > tr.end) return null;
+                      return (
+                        <span key={h} className="ruler-tick" style={{ left: x(t) }}>
+                          {h % 2 === 0 && <i>{minutesToHM(t)}</i>}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         );
