@@ -11,15 +11,22 @@ export interface TooltipData {
 }
 
 export default function BlockTooltip({ data, hidden }: { data: TooltipData | null; hidden: boolean }) {
-  // 进场：先以 opacity:0 挂载，下一帧加 .in 触发淡入过渡；离场：去掉 .in 触发淡出
+  // 淡入：先以 opacity:0 挂载并让浏览器绘制一帧，再于下一帧加 .in 触发过渡；
+  // 淡出：移除 .in 即可（组件仍挂载 170ms 供动画播放）。
   const [entered, setEntered] = useState(false);
   useEffect(() => {
     if (hidden) {
       setEntered(false);
       return;
     }
-    const raf = requestAnimationFrame(() => setEntered(true));
-    return () => cancelAnimationFrame(raf);
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setEntered(true));
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
   }, [hidden]);
 
   if (!data) return null;

@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.10] - 2026-09-04
+
+### Fixed（验收 ⑥ 再修订：淡入淡出均可见）
+- 淡入改用“双重 requestAnimationFrame”：先渲染一帧 opacity:0，再触发 180ms 淡入过渡；淡出同样 180ms（卸载延迟至 220ms）。保证进入与离开都有可见的动画。
+
 ## [0.2.9] - 2026-09-04
 
 ### Fixed（验收 ⑥ 修订：淡出修复）

@@ -126,7 +126,7 @@ export default function App() {
     if (!info) {
       setHoKey(null);
       setTipVisible(false);
-      tipTimer.current = window.setTimeout(() => setTip(null), 170);
+      tipTimer.current = window.setTimeout(() => setTip(null), 220);
     } else {
       setTip(info);
       setHoKey(key);
