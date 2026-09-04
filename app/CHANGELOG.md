@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.2] - 2026-09-04
+
+### Changed（验收 ①：字号再放大）
+- 全局再放大一档：正文 16px、块内文字 13.5px（日视图 15px）、悬浮窗/头部/标尺同步放大；排高与间距随字号加宽。
+
 ## [0.2.1] - 2026-09-04
 
 ### Changed（UI 反馈调整）

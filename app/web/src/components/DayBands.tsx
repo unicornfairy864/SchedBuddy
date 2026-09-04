@@ -45,7 +45,7 @@ interface Props {
 }
 
 export default function DayBands({ bands, schedules, nowMin, density, hoKey, onHover }: Props) {
-  const laneH = density === 'day' ? 46 : 27;
+  const laneH = density === 'day' ? 52 : 31;
   const style = { '--lane-h': `${laneH}px`, '--ruler-h': '20px' } as CSSProperties;
   const focus = hoKey != null;
 
