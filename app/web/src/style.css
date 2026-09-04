@@ -104,13 +104,14 @@ body {
 
 /* ---------- 日带（横向时间轴） ---------- */
 .bands {
-  flex: 1 1 auto;
   display: flex; flex-direction: column; gap: 9px;
   min-width: 640px;
 }
-/* 周视图：带宽满屏幕、纵向平分剩余空间 */
-.bands.week .band { flex: 1 1 auto; min-height: 56px; }
-.bands.day { flex: 0 1 auto; }
+/* 周视图：整列填满剩余高度；每条日带高按各自行数比例分配（2行=2份、1行/空日=1份） */
+.bands.week { flex: 1 1 0%; min-height: 0; }
+.bands.week .band { flex: 1 1 0%; min-width: 0; }
+.bands.day { flex: 0 1 auto; align-self: flex-start; }
+.bands.day .band { flex: 0 1 auto; }
 
 .band {
   display: flex;

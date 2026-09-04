@@ -76,8 +76,14 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
           placedByLane.set(p.lane, arr);
         }
         const wd = weekdayOf(band.date);
+        // 周视图下，日带高度按各自行数分配：行数×单位高；无日程也占 1 个单位高
+        const grow = density === 'week' && hasOcc ? Math.max(1, pack.laneCount) : undefined;
         return (
-          <div className={`band${band.isToday ? ' today' : ''}${band.tag ? ` half ${band.tag}` : ''}${hasOcc ? '' : ' empty'}`} key={band.date + (band.tag ?? '')}>
+          <div
+            className={`band${band.isToday ? ' today' : ''}${band.tag ? ` half ${band.tag}` : ''}${hasOcc ? '' : ' empty'}`}
+            style={grow ? { flexGrow: grow } : undefined}
+            key={band.date + (band.tag ?? '')}
+          >
             <div className="band-gutter">
               {band.tag ? (
                 <>
