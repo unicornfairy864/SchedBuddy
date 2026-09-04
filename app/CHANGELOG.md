@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.6] - 2026-09-04
+
+### Fixed（验收 ④）
+- 晨跑类短时块（≤30min）：周视图小方块仍隐藏文字；日视图大块现在始终显示名称（原先误用同一隐藏规则）。
+
 ## [0.2.5] - 2026-09-04
 
 ### Changed（验收 ③）

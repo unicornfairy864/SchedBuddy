@@ -136,7 +136,8 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
                               const s = schedules.get(occ.scheduleId);
                               if (!s) return null;
                               const key = `${occ.date}|${occ.scheduleId}|${occ.startMin}`;
-                              const slim = occ.endMin - occ.startMin <= 30;
+                              // 仅周视图的窄块隐藏文字；日视图方块大，始终显示名称
+                              const slim = density === 'week' && occ.endMin - occ.startMin <= 30;
                               return (
                                 <div
                                   key={key}
