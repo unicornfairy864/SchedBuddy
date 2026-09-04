@@ -89,8 +89,11 @@ export default function App() {
       }
     }
     if (!any) return { start: 0, end: 1440 };
-    const pad = 60;
-    return { start: Math.max(0, min - pad), end: Math.min(1440, max + pad) };
+    // 边界对齐整点：起点 = 最早日程所在小时整点向下取整，终点 = 最晚日程所在小时整点向上取整
+    return {
+      start: Math.max(0, Math.floor(min / 60) * 60),
+      end: Math.min(1440, Math.ceil(max / 60) * 60),
+    };
   }, [view, visibleDates, dayPacks]);
 
   // 渲染用「日带」列表：

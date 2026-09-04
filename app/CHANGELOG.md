@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.19] - 2026-09-04
+
+### Changed
+- 周视图边界裁剪时间对齐整点：起点 = 最早日程所在小时（向下取整），终点 = 最晚日程所在小时（向上取整）。
+
 ## [0.2.18] - 2026-09-04
 
 ### Fixed
