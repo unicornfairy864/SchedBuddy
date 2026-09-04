@@ -1,13 +1,12 @@
 import type { Occurrence, Schedule } from '../../../shared/src/types';
 import { TYPE_CN } from '../../../shared/src/types';
-import { allSegmentsDesc, ruleSummary } from '../format';
-import { dateWindowDesc } from '../format';
+import { allSegmentsDesc, ruleSummary, dateWindowDesc } from '../format';
 
 export interface TooltipData {
   occ: Occurrence;
   schedule: Schedule;
   x: number;
-  y: number;
+  y: number; // 触发块顶部中心（视口坐标）
 }
 
 export default function BlockTooltip({ data }: { data: TooltipData | null }) {
@@ -15,12 +14,16 @@ export default function BlockTooltip({ data }: { data: TooltipData | null }) {
   const { occ, schedule: s, x, y } = data;
   const current = dateWindowDesc(occ.date, occ.startMin, occ.endMin);
   const others = allSegmentsDesc(s).filter((d) => d !== current);
-  const flip = x > window.innerWidth - 360;
+  // 靠近顶部 → 翻到方块下方；靠近右侧 → 向左展开，避免越出视口
+  const below = y < 300;
+  const left = !below && x > window.innerWidth - 380;
+  const vw = window.innerWidth;
+  const clampedX = Math.min(Math.max(x, left ? 340 : 170), vw - 20);
 
   return (
     <div
-      className={`sb-tip${flip ? ' left' : ''}`}
-      style={{ top: Math.max(8, y - 8), left: x }}
+      className={`sb-tip${below ? ' below' : ''}${left ? ' left' : ''}`}
+      style={{ top: below ? y + 22 : y - 8, left: clampedX }}
     >
       <div className="tip-head">
         <span className="tip-color" style={{ background: s.color }} />

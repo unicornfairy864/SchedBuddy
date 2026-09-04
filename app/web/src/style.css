@@ -110,7 +110,8 @@ body {
 /* 周视图：整列填满剩余高度；每条日带高按各自行数比例分配（2行=2份、1行/空日=1份） */
 .bands.week { flex: 1 1 0%; min-height: 0; }
 .bands.week .band { flex: 1 1 0%; min-width: 0; }
-.bands.day { flex: 0 1 auto; align-self: flex-start; }
+/* 日视图：内容不足时在剩余高度内垂直居中 */
+.bands.day { flex: 1 1 auto; justify-content: center; }
 .bands.day .band { flex: 0 1 auto; }
 
 .band {
@@ -238,6 +239,7 @@ body {
 .sb-tip {
   position: fixed; z-index: 80; transform: translate(-50%, -100%);
   width: 330px; max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px); overflow: hidden;
   background: rgba(22, 32, 45, 0.93); color: #eef4fa;
   backdrop-filter: blur(8px);
   border-radius: 12px; padding: 14px 16px;
@@ -246,22 +248,32 @@ body {
   animation: tipin .12s var(--ease) both;
   pointer-events: none;
 }
-.sb-tip.left { transform: translate(calc(-100% + 40px), -100%); }
 .sb-tip::after {
   content: ''; position: absolute; left: 50%; bottom: -5px;
   transform: translateX(-50%) rotate(45deg);
   width: 10px; height: 10px; background: rgba(22, 32, 45, 0.93);
   border-radius: 2px;
 }
+/* 越界处理：顶部不足 → 下方展开；右侧不足 → 向左展开 */
+.sb-tip.below { transform: translate(-50%, 0); }
+.sb-tip.below::after { bottom: auto; top: -5px; }
+.sb-tip.left { transform: translate(calc(-100% + 44px), -100%); }
+.sb-tip.left::after { left: calc(100% - 44px); }
+.sb-tip.below.left { transform: translate(calc(-100% + 44px), 0); }
+.sb-tip.below.left::after { bottom: auto; top: -5px; }
 .tip-head { display: flex; align-items: center; gap: 9px; }
 .tip-color { width: 16px; height: 16px; border-radius: 4px; flex: none; }
 .tip-head strong { font-size: 16.5px; }
 .tip-head .type-badge { margin-left: auto; }
-.tip-notes { margin: 10px 0 7px; color: #c9d6e2; white-space: pre-wrap; word-break: break-word; }
+.tip-notes {
+  margin: 10px 0 7px; color: #c9d6e2;
+  white-space: pre-wrap; word-break: break-word;
+  display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+}
 .tip-times { margin: 7px 0; display: flex; flex-direction: column; gap: 5px; }
 .tip-times div { display: flex; gap: 9px; }
 .tip-times dt { color: #8fb8ae; flex: none; width: 40px; }
-.tip-times dd { margin: 0; color: #eef4fa; }
+.tip-times dd { margin: 0; color: #eef4fa; word-break: break-word; }
 .tip-rule { margin: 10px 0 0; color: #a9bccb; border-top: 1px dashed rgba(255, 255, 255, 0.14); padding-top: 9px; font-size: 13.5px; }
 
 /* ---------- 页脚 ---------- */
@@ -275,8 +287,12 @@ body {
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes grow { from { opacity: 0; transform: scaleX(0.9); } to { opacity: 1; transform: none; } }
 @keyframes tipin { from { opacity: 0; transform: translate(-50%, -94%); } to { opacity: 1; transform: translate(-50%, -100%); } }
+@keyframes tipdown { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes tipin-left { from { opacity: 0; transform: translate(calc(-100% + 44px), -94%); } to { opacity: 1; transform: translate(calc(-100% + 44px), -100%); } }
+@keyframes tipdown-left { from { opacity: 0; transform: translate(calc(-100% + 44px), -6px); } to { opacity: 1; transform: translate(calc(-100% + 44px), 0); } }
+.sb-tip.below { animation-name: tipdown; }
 .sb-tip.left { animation-name: tipin-left; }
-@keyframes tipin-left { from { opacity: 0; transform: translate(calc(-100% + 40px), -94%); } to { opacity: 1; transform: translate(calc(-100% + 40px), -100%); } }
+.sb-tip.below.left { animation-name: tipdown-left; }
 
 /* 类型点缀色 */
 .t-fixed { --tcol: #e4574e; }
