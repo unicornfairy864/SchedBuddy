@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, mondayOf, rangeDates, todayStr, weekIndexOf } from '../../shared/src/time';
 import { expandAll } from '../../shared/src/expand';
 import { packDay } from '../../shared/src/pack';
@@ -18,7 +18,13 @@ export default function App() {
   const [anchor, setAnchor] = useState<string>(todayStr());
   const [nowMin, setNowMin] = useState<number | null>(null);
   const [tip, setTip] = useState<HoverInfo | null>(null);
+  const [tipVisible, setTipVisible] = useState(false);
   const [hoKey, setHoKey] = useState<string | null>(null);
+  const tipTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    return () => window.clearTimeout(tipTimer.current);
+  }, []);
 
   const load = useCallback(async () => {
     setLoadState('loading');
@@ -114,9 +120,18 @@ export default function App() {
     return `${from.slice(5).replace('-', '/')} – ${to.slice(5).replace('-', '/')}${w}`;
   }, [view, visibleDates, meta?.termStart]);
 
+  // 悬浮窗：隐藏时先淡出再卸载，保证淡入淡出动画
   const handleHover = (info: HoverInfo | null, key: string | null) => {
-    setTip(info);
-    setHoKey(key);
+    if (tipTimer.current) window.clearTimeout(tipTimer.current);
+    if (!info) {
+      setHoKey(null);
+      setTipVisible(false);
+      tipTimer.current = window.setTimeout(() => setTip(null), 170);
+    } else {
+      setTip(info);
+      setHoKey(key);
+      setTipVisible(true);
+    }
   };
 
   return (
@@ -159,7 +174,7 @@ export default function App() {
         )}
       </main>
 
-      <BlockTooltip data={tip} />
+      <BlockTooltip data={tip} hidden={!tipVisible} />
 
       <footer className="app-foot">
         <span className="tip-hint">hover 方块查看详情{meta?.readOnly ? ' · 只读模式（请在桌面主机编辑）' : ''}</span>

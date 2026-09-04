@@ -9,7 +9,7 @@ export interface TooltipData {
   y: number; // 触发块顶部中心（视口坐标）
 }
 
-export default function BlockTooltip({ data }: { data: TooltipData | null }) {
+export default function BlockTooltip({ data, hidden }: { data: TooltipData | null; hidden: boolean }) {
   if (!data) return null;
   const { occ, schedule: s, x, y } = data;
   const current = dateWindowDesc(occ.date, occ.startMin, occ.endMin);
@@ -22,7 +22,7 @@ export default function BlockTooltip({ data }: { data: TooltipData | null }) {
 
   return (
     <div
-      className={`sb-tip${below ? ' below' : ''}${left ? ' left' : ''}`}
+      className={`sb-tip${below ? ' below' : ''}${left ? ' left' : ''}${hidden ? ' out' : ''}`}
       style={{ top: below ? y + 22 : y - 8, left: clampedX }}
     >
       <div className="tip-head">

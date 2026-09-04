@@ -248,6 +248,8 @@ body {
   animation: tipin .12s var(--ease) both;
   pointer-events: none;
 }
+.sb-tip.out { animation: none; opacity: 0; }
+.sb-tip { transition: opacity .14s ease; }
 .sb-tip::after {
   content: ''; position: absolute; left: 50%; bottom: -5px;
   transform: translateX(-50%) rotate(45deg);

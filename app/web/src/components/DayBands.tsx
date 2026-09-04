@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { CSSProperties, MouseEvent } from 'react';
 import type { Occurrence, PackDayResult, Schedule } from '../../../shared/src/types';
 import { minutesToHM, weekdayCn, weekdayOf, type DateStr } from '../../../shared/src/time';
@@ -35,6 +36,9 @@ function textOn(color: string): string {
   return lum > 150 ? '#3d2f27' : '#ffffff';
 }
 
+const keyOf = (o: { date: string; scheduleId: string; startMin: number }) =>
+  `${o.date}|${o.scheduleId}|${o.startMin}`;
+
 interface Props {
   bands: Band[];
   schedules: Map<string, Schedule>;
@@ -49,18 +53,42 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
   const style = { '--lane-h': `${laneH}px`, '--ruler-h': '22px' } as CSSProperties;
   const focus = hoKey != null;
 
-  const handleEnter = (e: MouseEvent, occ: Occurrence) => {
-    const s = schedules.get(occ.scheduleId);
-    if (!s) return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  // key -> {occ, schedule} 快速查表，供容器级 hover 代理使用
+  const lookup = useMemo(() => {
+    const m = new Map<string, { occ: Occurrence; schedule: Schedule }>();
+    for (const band of bands) {
+      for (const p of band.pack.placed) {
+        const schedule = schedules.get(p.occ.scheduleId);
+        if (schedule) m.set(keyOf(p.occ), { occ: p.occ, schedule });
+      }
+    }
+    return m;
+  }, [bands, schedules]);
+
+  // 容器级事件代理：指针离开任意方块（即使仍在页内）立即隐藏悬浮窗
+  const handleMove = (e: MouseEvent) => {
+    const el = (e.target as Element | null)?.closest?.('.sb-block') as HTMLElement | null;
+    const key = el?.dataset?.k ?? null;
+    if (!key) {
+      if (hoKey) onHover(null, null);
+      return;
+    }
+    const hit = lookup.get(key);
+    if (!hit) return;
+    const rect = el!.getBoundingClientRect();
     onHover(
-      { occ, schedule: s, x: rect.left + rect.width / 2, y: rect.top },
-      `${occ.date}|${occ.scheduleId}|${occ.startMin}`,
+      { occ: hit.occ, schedule: hit.schedule, x: rect.left + rect.width / 2, y: rect.top },
+      key,
     );
   };
 
   return (
-    <div className={`bands ${density}${focus ? ' focus' : ''}`} style={style} onMouseLeave={() => onHover(null, null)}>
+    <div
+      className={`bands ${density}${focus ? ' focus' : ''}`}
+      style={style}
+      onMouseMove={handleMove}
+      onMouseLeave={() => onHover(null, null)}
+    >
       {bands.map((band) => {
         const pack = band.pack;
         const hasOcc = pack.placed.length > 0;
@@ -135,16 +163,15 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
                             .map((occ) => {
                               const s = schedules.get(occ.scheduleId);
                               if (!s) return null;
-                              const key = `${occ.date}|${occ.scheduleId}|${occ.startMin}`;
+                              const key = keyOf(occ);
                               // 仅周视图的窄块隐藏文字；日视图方块大，始终显示名称
                               const slim = density === 'week' && occ.endMin - occ.startMin <= 30;
                               return (
                                 <div
                                   key={key}
+                                  data-k={key}
                                   className={`sb-block t-${s.type}${focus ? '' : ' idl'}${key === hoKey ? ' ho' : ''}${slim ? ' slim' : ''}`}
                                   style={{ left: x(Math.max(occ.startMin, tr.start)), width: `${((Math.min(occ.endMin, tr.end) - Math.max(occ.startMin, tr.start)) / span) * 100}%`, background: s.color, color: textOn(s.color) }}
-                                  onMouseEnter={(e) => handleEnter(e, occ)}
-                                  onMouseMove={(e) => handleEnter(e, occ)}
                                 >
                                   {!slim && <span className="blk-title">{s.title}</span>}
                                 </div>
