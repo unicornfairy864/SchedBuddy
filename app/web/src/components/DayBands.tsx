@@ -26,6 +26,8 @@ export interface HoverInfo {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
+/** 刻度分钟：0:00 ~ 24:00（含最右端边界刻度与标签） */
+const TICK_MINUTES = Array.from({ length: 25 }, (_, i) => i * 60);
 
 function textOn(color: string): string {
   const hex = color.replace('#', '');
@@ -182,13 +184,11 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
                     })}
                   </div>
                   <div className="ruler">
-                    {HOURS.map((h) => {
-                      const t = h * 60;
-                      if (t < tr.start || t > tr.end) return null;
-                      const isLabel = h % 2 === 0;
+                    {TICK_MINUTES.filter((t) => t >= tr.start && t <= tr.end).map((t) => {
+                      const isLabel = t % 120 === 0;
                       const edge = isLabel && t === tr.start ? ' edge-l' : isLabel && t === tr.end ? ' edge-r' : '';
                       return (
-                        <span key={h} className={`ruler-tick${edge}`} style={{ left: x(t) }}>
+                        <span key={t} className={`ruler-tick${edge}`} style={{ left: x(t) }}>
                           {isLabel && <i>{minutesToHM(t)}</i>}
                         </span>
                       );

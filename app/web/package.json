@@ -1,6 +1,6 @@
 {
   "name": "@schedbuddy/web",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "private": true,
   "description": "Web 前端：React + TS + Vite。桌面窗口与局域网浏览器共用同一套界面。",
   "scripts": {
