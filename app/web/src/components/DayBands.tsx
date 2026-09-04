@@ -26,8 +26,20 @@ export interface HoverInfo {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
-/** 刻度分钟：0:00 ~ 24:00（含最右端边界刻度与标签） */
+/** 刻度分钟：0:00 ~ 24:00（整点） */
 const TICK_MINUTES = Array.from({ length: 25 }, (_, i) => i * 60);
+
+/** 标尺刻度：区间内整点 + 首/尾边界各加一个带数字的刻度（保证裁剪后首尾仍有刻度与时间） */
+function rulerTicks(start: number, end: number): { t: number; label: boolean }[] {
+  const out: { t: number; label: boolean }[] = [];
+  for (const t of TICK_MINUTES) {
+    if (t > start && t < end) out.push({ t, label: t % 120 === 0 });
+  }
+  out.push({ t: start, label: true });
+  if (end !== start) out.push({ t: end, label: true });
+  out.sort((a, b) => a.t - b.t);
+  return out;
+}
 
 function textOn(color: string): string {
   const hex = color.replace('#', '');
@@ -184,12 +196,11 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
                     })}
                   </div>
                   <div className="ruler">
-                    {TICK_MINUTES.filter((t) => t >= tr.start && t <= tr.end).map((t) => {
-                      const isLabel = t % 120 === 0;
-                      const edge = isLabel && t === tr.start ? ' edge-l' : isLabel && t === tr.end ? ' edge-r' : '';
+                    {rulerTicks(tr.start, tr.end).map((tk) => {
+                      const edge = tk.t === tr.start ? ' edge-l' : tk.t === tr.end ? ' edge-r' : '';
                       return (
-                        <span key={t} className={`ruler-tick${edge}`} style={{ left: x(t) }}>
-                          {isLabel && <i>{minutesToHM(t)}</i>}
+                        <span key={tk.t} className={`ruler-tick${edge}`} style={{ left: x(tk.t) }}>
+                          {tk.label && <i>{minutesToHM(tk.t)}</i>}
                         </span>
                       );
                     })}
