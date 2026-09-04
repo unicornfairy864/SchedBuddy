@@ -1,6 +1,21 @@
 {
   "name": "@schedbuddy/web",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Web 前端：React + TS + Vite。桌面窗口与局域网浏览器共用同一套界面。"
+  "description": "Web 前端：React + TS + Vite。桌面窗口与局域网浏览器共用同一套界面。",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.7"
+  }
 }

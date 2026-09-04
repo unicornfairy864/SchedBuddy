@@ -5,6 +5,7 @@ release/
 out/
 *.log
 *.tsbuildinfo
+.npm-cache/
 
 # 运行时数据（保留在 app/data，但不入库；备份同样不入库）
 app/data/*.db
@@ -19,6 +20,3 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
-
-# 个人资源（不属于成品，如 resources/avator.jpg）
-/resources/

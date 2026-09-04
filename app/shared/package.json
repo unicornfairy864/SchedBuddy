@@ -1,6 +1,11 @@
 {
   "name": "@schedbuddy/shared",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "共享层：类型定义 + 规则引擎 + 冲突/排布算法（浏览器与 Node 共用，零运行时依赖）。"
+  "description": "共享层：类型定义 + 规则引擎 + 冲突/排布算法（浏览器与 Node 共用，零运行时依赖）。",
+  "main": "dist/index.cjs",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "node ../scripts/build.mjs shared"
+  }
 }
