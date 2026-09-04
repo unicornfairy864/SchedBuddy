@@ -89,10 +89,11 @@ export default function App() {
       }
     }
     if (!any) return { start: 0, end: 1440 };
-    // 边界对齐整点：起点 = 最早日程所在小时整点向下取整，终点 = 最晚日程所在小时整点向上取整
+    // 边界为整点且（最多）保留 1h 空余：
+    // 起点 = (最早日程 − 1h) 向上取整到整点；终点 = (最晚日程 + 1h) 向下取整到整点
     return {
-      start: Math.max(0, Math.floor(min / 60) * 60),
-      end: Math.min(1440, Math.ceil(max / 60) * 60),
+      start: Math.max(0, Math.ceil((min - 60) / 60) * 60),
+      end: Math.min(1440, Math.floor((max + 60) / 60) * 60),
     };
   }, [view, visibleDates, dayPacks]);
 

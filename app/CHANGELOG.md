@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.20] - 2026-09-04
+
+### Changed
+- 周视图边界为整点且最多保留 1h 空余：起点 = (最早日程−1h) 向上取整到整点，终点 = (最晚日程+1h) 向下取整到整点。
+
 ## [0.2.19] - 2026-09-04
 
 ### Changed
