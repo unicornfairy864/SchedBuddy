@@ -1,0 +1,24 @@
+# 依赖与构建产物
+node_modules/
+dist/
+release/
+out/
+*.log
+*.tsbuildinfo
+
+# 运行时数据（保留在 app/data，但不入库；备份同样不入库）
+app/data/*.db
+app/data/*.db-journal
+app/data/*.db-wal
+app/data/*.db-shm
+app/data/backups/
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# 个人资源（不属于成品，如 resources/avator.jpg）
+/resources/

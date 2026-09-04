@@ -1,0 +1,21 @@
+{
+  "name": "schedbuddy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SchedBuddy 大学生时间管理：桌面(Electron)+局域网Web双端，单用户日程可视化。",
+  "workspaces": [
+    "shared",
+    "server",
+    "web",
+    "desktop"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:web": "npm run dev --workspace web",
+    "dev:server": "npm run dev --workspace server",
+    "start:server": "npm run start --workspace server",
+    "start:desktop": "npm run start --workspace desktop"
+  }
+}
