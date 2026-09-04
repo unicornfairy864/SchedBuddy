@@ -73,12 +73,37 @@ export default function App() {
     return map;
   }, [schedules, visibleDates, meta?.termStart]);
 
+  // 周视图共用可见时段：裁掉 7 天共有的首/尾空余（最早日程前 1h ~ 最晚日程后 1h；全周无日程则 0-24）
+  const weekRange = useMemo(() => {
+    if (view !== 'week') return null;
+    let min = 1440;
+    let max = 0;
+    let any = false;
+    for (const d of visibleDates) {
+      const pack = dayPacks.get(d);
+      if (!pack) continue;
+      for (const p of pack.placed) {
+        if (p.occ.startMin < min) min = p.occ.startMin;
+        if (p.occ.endMin > max) max = p.occ.endMin;
+        any = true;
+      }
+    }
+    if (!any) return { start: 0, end: 1440 };
+    const pad = 60;
+    return { start: Math.max(0, min - pad), end: Math.min(1440, max + pad) };
+  }, [view, visibleDates, dayPacks]);
+
   // 渲染用「日带」列表：
-  //  - 周视图：每天一条完整 24h 日带；
+  //  - 周视图：每天一条日带，共用同一可见时段 weekRange（7 天同轴）；
   //  - 日视图：始终拆成 上午/下午 两条半天带（各半只裁剪自身首尾空余；跨 12 点的日程两段共享同 key = 同一整体）。
   const bands: Band[] = useMemo(() => {
     if (view === 'week') {
-      return visibleDates.map((date) => ({ date, pack: dayPacks.get(date)!, isToday: date === today }));
+      return visibleDates.map((date) => ({
+        date,
+        pack: dayPacks.get(date)!,
+        isToday: date === today,
+        range: weekRange ?? { start: 0, end: 1440 },
+      }));
     }
     const date = anchor;
     const pack = dayPacks.get(date);
@@ -97,7 +122,7 @@ export default function App() {
       { date, pack, isToday: date === today, range: { start: hasMorning ? Math.max(0, minM - pad) : 0, end: 720 }, tag: '上午' },
       { date, pack, isToday: date === today, range: { start: 720, end: hasEvening ? Math.min(1440, maxE + pad) : 1440 }, tag: '下午' },
     ];
-  }, [view, anchor, visibleDates, dayPacks, today]);
+  }, [view, anchor, visibleDates, dayPacks, today, weekRange]);
 
   const schedulesById = useMemo(() => new Map(schedules.map((s) => [s.id, s])), [schedules]);
 
