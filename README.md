@@ -27,7 +27,7 @@ Electron + React + TypeScript + Vite + Node(Express) + SQLite(better-sqlite3)，
 桌面端 = 常驻主机（内置后端 + 数据库）；局域网设备通过浏览器访问同一份数据（只读）。
 > 打包/安装程序（electron-builder）已按用户要求**搁置**，待用户明确指令后再做。
 
-## 本地运行（当前 v0.2：Web 只读视图 + API）
+## 本地运行（当前 v0.3.0：PC/Web 编辑核心已定版）
 
 ```powershell
 cd app
@@ -35,9 +35,10 @@ npm install          # 首次
 npm run build        # 打包 shared/server/web
 npm start            # 启动服务 http://127.0.0.1:3876（0.0.0.0 监听）
 npm run seed:demo    # 可选：写入演示日程
-npm test             # 规则引擎自测
+npm test             # 规则引擎自测（15 组）
 ```
 
 - 数据自动存入 `app/data/schedbuddy.db`（不入库，含自动备份）。
 - 开发模式：`npm run dev:server`（服务热更）+ 新终端 `npm run dev:web`（Vite 5173 代理 /api）。
-- **路线规划（v0.3 起，详见 `app/docs/00-decisions.md` §5 与 `app/docs/01-architecture.md` §5）**：v0.3 = PC/Web 编辑核心（含同步字段落库）；v0.4 = Android App（React Native）骨架（局域网直连 + PIN 配对）；v0.5 = App 离线工作区 + 手动 pull/push/merge 同步。Electron 桌面壳（原 v0.4）**顺延**，打包/安装程序仍按用户要求搁置。
+- 本机为唯一写端（新建/编辑/删除、设置）；局域网浏览器只读。
+- **路线规划（v0.4 起，详见 `app/docs/00-decisions.md` §5 与 `app/docs/01-architecture.md` §5）**：v0.4 = Android App（RN）骨架（局域网直连 + PIN 配对）；v0.5 = App 离线工作区 + 手动 pull/push/merge 同步。Electron 桌面壳**顺延**，打包/安装程序仍按用户要求搁置。
