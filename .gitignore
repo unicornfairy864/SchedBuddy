@@ -7,16 +7,22 @@ out/
 *.tsbuildinfo
 .npm-cache/
 
-# 运行时数据（保留在 app/data，但不入库；备份同样不入库）
+# 运行时数据（保留在 app/data，但不入库）：库文件 / WAL / 备份 / 手动导出备份
 app/data/*.db
 app/data/*.db-journal
 app/data/*.db-wal
 app/data/*.db-shm
 app/data/backups/
+app/data/export/
 
-# 系统 / 编辑器
+# 桌面打包产物（electron-builder 输出目录）
+app/desktop/release/
+desktop/release/
+
+# 系统 / 编辑器 / 临时
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+*.tmp
