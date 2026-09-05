@@ -1,6 +1,6 @@
 # 04 · API 约定
 
-> 状态：生效　·　最近更新：v0.2.29（2026-09-05）　·　规范：`07-doc-standards.md`
+> 状态：生效　·　最近更新：v0.3.5（2026-09-05）　·　规范：`07-doc-standards.md`
 
 Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟或 `HH:mm`（见各接口）。错误统一 `{ error: string, details?: unknown }`。
 
@@ -17,15 +17,15 @@ Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟�
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| GET | `/api/meta` | `{ version, readOnly, port, hostname, termStart?, now }` |
+| GET | `/api/meta` | `{ version, readOnly, port, lan|null, termStart?, now }`（`lan` = 本机局域网访问地址，v0.3.3 起） |
 | GET | `/api/schedules` | 全部**在册**日程（含 rule/segments/overrides JSON；每条含同步元字段 `rev`/`deletedAt`/`lastWriter`） |
 | POST | `/api/schedules` | 新建；body: Schedule 对象（不含 id/created_at/updated_at 及同步元字段）；`force?:boolean`。错误：`{error:'conflict', conflicts:[...]}` 或 `{error:'invalid', issues:[...]}`。新建 = rev 1、lastWriter `'pc'` |
 | PUT | `/api/schedules/:id` | 全量更新，同上校验；保存即视为在册，rev = 既有值 + 1 |
 | DELETE | `/api/schedules/:id` | **软删除**（v0.2.29 起）：置 `deleted_at` 墓碑并 rev+1，删除可随同步传播；在册记录删除 → `{ok:true, deleted:true}`；已删除或不存在 → `404` |
 | GET | `/api/occurrences?from=YYYY-MM-DD&to=YYYY-MM-DD` | 服务端展开结果（调试/只读端可选缓存用） |
 | GET/PUT | `/api/settings` | `{ termStart?, termEnd?, weekCount?, holidays?, ui? }` |
-| GET | `/api/export` | 全量 JSON（schedule + settings），供备份迁移 |
-| POST | `/api/import` | 导入（覆盖式，需 force 确认） |
+| GET | `/api/export` | 全量 JSON：`{ version, exportedAt, settings, schedules }`（schedules = 在册全部；settings 全键），供备份/迁移 |
+| POST | `/api/import` | 导入备份 JSON（合并式）：逐条校验通过的 schedule 按 id **覆盖/复活**（清墓碑、rev+1）或新增；`settings` 并入；文件外的既有日程保留。返回 `{ ok, failed, bad:[{title?,issues}] }` |
 
 服务端保存流程：`validateSchedule`（shared）→ 冲突检测 `detectConflicts`（shared，窗口 = 该日程可能影响范围，缺省 ±1 年）→ 策略判定 → 写库。
 

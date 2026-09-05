@@ -1,6 +1,6 @@
 # 01 · 架构
 
-> 状态：生效　·　最近更新：v0.3.0（2026-09-05）　·　规范：`07-doc-standards.md`
+> 状态：生效　·　最近更新：v0.3.5（2026-09-05）　·　规范：`07-doc-standards.md`
 
 ## 1. 拓扑（现状：双端）
 
@@ -54,7 +54,7 @@ app/
 ├─ shared/                 # @schedbuddy/shared：类型 + 纯函数（规则引擎/展开/冲突/排布/格式化），零依赖
 ├─ server/                 # Express API + SQLite 迁移 + 备份；同时被 desktop 内嵌
 ├─ web/                    # React 前端（Vite 构建产物 server 静态托管）
-├─ desktop/                # Electron 主进程 + preload（规划顺延）
+├─ desktop/                # Electron 主进程（已起步 v0.3.5）：随包 node.exe 子进程拉起 server，Electron 只渲染窗口
 ├─ mobile/                 # （规划 v0.4）React Native Android App：复用 shared + web 布局计算；RN 组件重绘 UI
 └─ data/                   # 运行时数据（不入库）：db、backups/、export/
 ```
@@ -72,7 +72,7 @@ app/
 
 | 风险 | 对策 |
 | --- | --- |
-| better-sqlite3 为原生模块，Electron ABI 不匹配 | Electron/系统 Node **ABI 互斥切换**：桌面 `npx electron-rebuild -f -w better-sqlite3`；Web `npm rebuild better-sqlite3`（详见 `README.md` 与 `06-dev-conventions.md`；electron-builder 打包自动重编译） |
+| better-sqlite3 原生模块与 Electron ABI 不匹配 | **v0.3.5 起免切换**：后端始终由系统 Node 运行（桌面壳用随包 `node.exe` 子进程拉起 server，Electron 只渲染窗口），`better-sqlite3` 只编译给系统 Node；electron-builder 设 `npmRebuild:false`（详见 `README.md`） |
 | Electron 下载体积大 / 网络慢 | 与安装清单一并说明；desktop 可滞后一期接入，前端 + API 先独立可跑 |
 | LAN 只读但同网段被伪造来源 | 本地局域网可信模型，文档明示；后续可加可选口令 |
 | 打包后 `app/data` 可能只读（如 Program Files） | 通过 `SCHEDBUDDY_DATA` 指向可写目录；本期优先源码运行形态 |

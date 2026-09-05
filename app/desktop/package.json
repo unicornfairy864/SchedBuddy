@@ -2,7 +2,7 @@
   "name": "@schedbuddy/desktop",
   "version": "0.2.22",
   "private": true,
-  "description": "桌面壳：Electron 主进程 = 内嵌启动后端 + 打开本地窗口（本机为唯一可写主机，局域网仅只读）。主进程见 src/main.ts（build.mjs desktop 目标）；electron/electron-builder/@electron/rebuild 依赖由用户在打包前手动确认安装。",
+  "description": "桌面壳：Electron 主进程随包 node.exe 子进程拉起 server（v0.3.5 起，better-sqlite3 单一系统 Node ABI 无需切换），Electron 只渲染窗口。主进程 src/main.ts（build.mjs desktop）；打包见 npm run dist:dir。",
   "main": "dist/main.cjs",
   "scripts": {
     "start": "electron ."
