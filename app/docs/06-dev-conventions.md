@@ -14,6 +14,15 @@
 | `npm run dev:web` | Vite 开发服务器（5173，代理 /api→3876） | |
 | `npm run seed:demo` | 重建演示数据 | 幂等：先清空全部日程 |
 | `node scripts/build.mjs [shared\|server\|desktop]` | 按需单包构建 | 缺省 shared+server |
+| `npm run desktop` / `npm run dist:dir` | 桌面开发运行 / 打包 win-unpacked（Electron） | 见「原生模块 ABI 切换」 |
+
+### 原生模块 ABI 切换（better-sqlite3）
+
+better-sqlite3 为原生模块，**Electron 与系统 Node 的 ABI 互斥**，切换运行环境必须重编译：
+- Web/服务模式（系统 Node ABI）：`npm rebuild better-sqlite3` → `npm start`
+- 桌面模式（Electron ABI）：`npx electron-rebuild -f -w better-sqlite3` → `npm run desktop` / `npm run dist:dir`
+- `electron-builder` 打包时会自动按 Electron 重编译原生模块，**打包后 ABI 已切为 Electron**；再跑 `npm start` 前须先切回系统 Node。
+- 完整说明见 `README.md`「桌面端（Electron）· 环境切换与打包」。
 
 ## 2. 目录职责（红线：依赖方向单向向下）
 

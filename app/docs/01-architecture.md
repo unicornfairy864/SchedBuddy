@@ -72,7 +72,7 @@ app/
 
 | 风险 | 对策 |
 | --- | --- |
-| better-sqlite3 为原生模块，Electron ABI 不匹配 | 安装 `@electron/rebuild`，desktop 构建前执行 rebuild；server 独立运行时用 Node 预编译产物 |
+| better-sqlite3 为原生模块，Electron ABI 不匹配 | Electron/系统 Node **ABI 互斥切换**：桌面 `npx electron-rebuild -f -w better-sqlite3`；Web `npm rebuild better-sqlite3`（详见 `README.md` 与 `06-dev-conventions.md`；electron-builder 打包自动重编译） |
 | Electron 下载体积大 / 网络慢 | 与安装清单一并说明；desktop 可滞后一期接入，前端 + API 先独立可跑 |
 | LAN 只读但同网段被伪造来源 | 本地局域网可信模型，文档明示；后续可加可选口令 |
 | 打包后 `app/data` 可能只读（如 Program Files） | 通过 `SCHEDBUDDY_DATA` 指向可写目录；本期优先源码运行形态 |
@@ -84,4 +84,4 @@ app/
 - ✅ **0.3.0**（已定版，2026-09-05）：PC/Web **编辑核心** —— 新建/编辑/删除弹窗与冲突告警交互（红/黄前置、不拦保存、红自动 force）、设置面板、同步字段落库（迁移 v3 软删）、「高级」折叠区（单双周 + 生效限制：日期范围 / 课程总数量，迁移 v4 引擎按天截止）、弹窗控件升级与动画打磨（详见 `项目说明.md` 里程碑）。引擎自测 15 组。
 - **0.4**：**Android App（RN + TS）骨架**：`app/mobile` workspace、局域网直连主机、周/日视图（复用 shared 引擎与布局计算、RN 重绘 UI）、只读起步、主机地址配置 + **PIN 一次性配对换发设备 token**（server 增加配对端点与 token 写校验）。
 - **0.5**：App **离线工作区**（内置 SQLite：离线查看/新建/修改/删除）+ **用户手动 pull/push/merge**（冲突逐条裁决：留主机版/留本机版/手动编辑）+ 删除传播（墓碑）+ 回网同步提示。
-- **顺延/backlog**：Electron 桌面壳（原 v0.4，因移动端优先顺延至 v0.5 之后视需排期）；真实局域网实测；公网通道 + 口令鉴权（明确不做，视未来需要再评估）；打包/安装程序（electron-builder 已按用户要求搁置，待明确指令）。
+- **顺延/backlog**：Electron 桌面壳**已起步**（v0.3.1 主进程 + v0.3.x 可产出 win-unpacked 目录；正式桌面壳里程碑待排期）；真实局域网实测；公网通道 + 口令鉴权（明确不做，视未来需要再评估）；NSIS 安装包 / 自定义图标（可选项）。
