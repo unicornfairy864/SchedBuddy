@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import type { FocusEvent as ReactFocusEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 /** 由 'YYYY-MM-DD' 拆成 [年, 月, 日]（空串 → 三个空） */
 function splitSegs(v: string): [string, string, string] {
@@ -50,6 +50,7 @@ export default function DateField({
   // 实时镜像当前三段值：blur/跳格可能在 React 提交前触发，避免用旧闭包回退
   const segsRef = useRef<[string, string, string]>(segs);
   const lastRef = useRef(value);
+  const rootRef = useRef<HTMLDivElement>(null);
   const refs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   const nativeRef = useRef<HTMLInputElement>(null);
 
@@ -104,16 +105,35 @@ export default function DateField({
     }
   };
 
-  // 失焦：不完整输入回退为最近有效值；全空提交清空（用 segsRef，避免未提交的旧状态）
-  const blur = () => {
-    const c = compose(...segsRef.current);
-    if (c === null) {
-      const prev = splitSegs(lastRef.current);
-      segsRef.current = prev;
-      setSegs(prev);
-    } else {
+  // 真正离开整个日期组时：优先用参考日补齐缺失段；仍不完整才回退最近有效值；全空提交清空
+  const finish = () => {
+    const cur = segsRef.current;
+    const c = compose(...cur);
+    if (c !== null) {
       commit(c);
+      return;
     }
+    if (defaultDate) {
+      const [dy, dm, dd] = splitSegs(defaultDate);
+      const filled: [string, string, string] = [cur[0] || dy, cur[1] || dm, cur[2] || dd];
+      const c2 = compose(...filled);
+      if (c2 !== null) {
+        segsRef.current = filled;
+        setSegs(filled);
+        commit(c2);
+        return;
+      }
+    }
+    const prev = splitSegs(lastRef.current);
+    segsRef.current = prev;
+    setSegs(prev);
+  };
+
+  // 段与段之间跳格也算“失焦”，但焦点仍在组内 → 不处理，避免把刚输入的回退掉
+  const onWrapBlur = (e: ReactFocusEvent<HTMLDivElement>) => {
+    const rt = e.relatedTarget as Node | null;
+    if (rt && rootRef.current?.contains(rt)) return;
+    finish();
   };
 
   const openNative = () => {
@@ -127,7 +147,13 @@ export default function DateField({
   };
 
   return (
-    <div className={`datefield${className ? ` ${className}` : ''}`} role="group" aria-label={ariaLabel}>
+    <div
+      className={`datefield${className ? ` ${className}` : ''}`}
+      role="group"
+      aria-label={ariaLabel}
+      ref={rootRef}
+      onBlur={onWrapBlur}
+    >
       {segs.map((v, i) => (
         <span className="df-segbox" key={i}>
           <input
@@ -139,7 +165,6 @@ export default function DateField({
             onFocus={(e) => e.target.select()}
             onChange={(e) => edit(i, e.target.value)}
             onKeyDown={(e) => nav(i, e)}
-            onBlur={blur}
           />
           <span className="df-suf">{SUFFIX[i]}</span>
         </span>
