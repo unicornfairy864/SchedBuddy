@@ -20,10 +20,15 @@ export default function App() {
   const [tip, setTip] = useState<HoverInfo | null>(null);
   const [tipVisible, setTipVisible] = useState(false);
   const [hoKey, setHoKey] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
   const tipTimer = useRef<number | undefined>(undefined);
+  const hintTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    return () => window.clearTimeout(tipTimer.current);
+    return () => {
+      window.clearTimeout(tipTimer.current);
+      window.clearTimeout(hintTimer.current);
+    };
   }, []);
 
   const load = useCallback(async () => {
@@ -41,6 +46,13 @@ export default function App() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // 占位提示（v0.3 顶栏按钮暂未接入弹窗，提示下一轮接入内容）
+  const showHint = useCallback((msg: string) => {
+    setHint(msg);
+    if (hintTimer.current) window.clearTimeout(hintTimer.current);
+    hintTimer.current = window.setTimeout(() => setHint(null), 2600);
+  }, []);
 
   // 当前时间线（每分钟刷新）
   useEffect(() => {
@@ -170,6 +182,8 @@ export default function App() {
         onPrev={() => nav(-1)}
         onNext={() => nav(1)}
         onToday={() => setAnchor(today)}
+        onNew={() => showHint('＋ 新建：编辑弹窗将在下一验收轮接入（本轮仅验收顶栏）')}
+        onSettings={() => showHint('设置：学期起点/结束/周数面板将在下一验收轮接入')}
       />
 
       <main className="board-scroll">
@@ -204,6 +218,8 @@ export default function App() {
       <footer className="app-foot">
         <span className="tip-hint">hover 方块查看详情{meta?.readOnly ? ' · 只读模式（请在桌面主机编辑）' : ''}</span>
       </footer>
+
+      <div className={hint ? 'snack in' : 'snack'} role="status" aria-live="polite">{hint}</div>
     </div>
   );
 }
