@@ -541,7 +541,6 @@ body {
 .modal textarea { resize: vertical; min-height: 46px; }
 .modal select { width: auto; }
 .modal input.num { width: 96px; }
-.modal input.time { width: 112px; }
 
 /* 复选框行（生效范围启用等）：自绘复选框 */
 .fld-check {
@@ -598,7 +597,24 @@ body {
 }
 .df-cal button:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .df-cal button:active { transform: scale(0.93); }
-.df-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.modal .datefield .df-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+/* 友好时间输入：时:分 两段框（仿日期三段） */
+.modal .timefield { display: inline-flex; align-items: center; width: fit-content; }
+.modal .timefield .tf-seg {
+  width: 2.6em; flex: none;
+  font: inherit; color: var(--text);
+  border: 1px solid var(--line); background: #fff;
+  border-radius: 10px; padding: 8px 4px;
+  text-align: center; font-variant-numeric: tabular-nums;
+  cursor: text; caret-color: var(--accent);
+  transition: border-color .15s, box-shadow .15s;
+}
+.modal .timefield .tf-seg:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62, 175, 155, 0.16);
+}
+.tf-colon { color: var(--text2); font-weight: 700; margin: 0 3px; }
 
 /* 自绘下拉（单双周等；原生 select 展开列表无法跨浏览器自定义样式） */
 .dd { position: relative; display: inline-flex; }

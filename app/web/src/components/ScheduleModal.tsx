@@ -14,6 +14,7 @@ import {
 } from '../api';
 import Dropdown from './Dropdown';
 import DateField from './DateField';
+import TimeField from './TimeField';
 
 /* ---------- 工具 ---------- */
 
@@ -185,6 +186,13 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   const focusToYear = () => {
     const y = activeToWrap.current?.querySelector<HTMLInputElement>('.df-seg.y');
     y?.focus();
+  };
+  // 时段行：开始/结束 时:分 联动（开始分满 → 结束时；结束分满 → 下一行开始时）
+  const startWraps = useRef<(HTMLSpanElement | null)[]>([]);
+  const endWraps = useRef<(HTMLSpanElement | null)[]>([]);
+  const focusHourOf = (el: HTMLElement | null) => {
+    const inp = el?.querySelector<HTMLInputElement>('.tf-seg.h');
+    inp?.focus();
   };
 
   const editing = initial.schedule;
@@ -503,9 +511,17 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
                   ) : (
                     <span className="seg-row-spacer" />
                   )}
-                  <input className="time" type="time" step="60" value={r.start} onChange={(e) => updRow(i, { start: e.target.value })} aria-label={`第${i + 1}条开始`} />
+                  <span ref={(el) => { startWraps.current[i] = el; }}>
+                    <TimeField value={r.start} ariaLabel={`第${i + 1}条开始`}
+                      onChange={(v) => updRow(i, { start: v })}
+                      onDone={() => focusHourOf(endWraps.current[i])} />
+                  </span>
                   <i className="dash">–</i>
-                  <input className="time" type="time" step="60" value={r.end} onChange={(e) => updRow(i, { end: e.target.value })} aria-label={`第${i + 1}条结束`} />
+                  <span ref={(el) => { endWraps.current[i] = el; }}>
+                    <TimeField value={r.end} ariaLabel={`第${i + 1}条结束`}
+                      onChange={(v) => updRow(i, { end: v })}
+                      onDone={() => focusHourOf(startWraps.current[i + 1])} />
+                  </span>
                   <button type="button" className="icon-btn ghost rm" onClick={() => removeRow(i)} disabled={rowProps(f.kind).length <= 1} aria-label="删除该时段">✕</button>
                 </div>
               ))}
