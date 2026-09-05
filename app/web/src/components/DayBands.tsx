@@ -60,9 +60,23 @@ interface Props {
   density: 'day' | 'week';
   hoKey: string | null;
   onHover: (info: HoverInfo | null, key: string | null) => void;
+  /** 本机可编辑态：方块可点击编辑、时间区空白处点击快速新建 */
+  editable?: boolean;
+  onBlockClick?: (scheduleId: string) => void;
+  onSlotClick?: (date: DateStr, startMin: number) => void;
 }
 
-export default function DayBands({ bands, schedules, nowMin, density, hoKey, onHover }: Props) {
+export default function DayBands({
+  bands,
+  schedules,
+  nowMin,
+  density,
+  hoKey,
+  onHover,
+  editable,
+  onBlockClick,
+  onSlotClick,
+}: Props) {
   const laneH = density === 'day' ? 52 : 31;
   const style = { '--lane-h': `${laneH}px`, '--ruler-h': '24px' } as CSSProperties;
   const focus = hoKey != null;
@@ -96,9 +110,28 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
     );
   };
 
+  // 点击时间区空白处：换算该日分钟数 → 快速新建（snap 到 30 分钟）
+  const handleSlot = (e: MouseEvent<HTMLDivElement>, band: Band) => {
+    if (!editable || !onSlotClick) return;
+    const target = e.target as Element;
+    if (target.closest('.sb-block') || target.closest('.ruler')) return;
+    const tr = band.range ?? { start: 0, end: 1440 };
+    const rect = e.currentTarget.getBoundingClientRect();
+    const frac = rect.width > 0 ? (e.clientX - rect.left) / rect.width : 0;
+    const span = tr.end - tr.start;
+    let min = Math.round((tr.start + frac * span) / 30) * 30;
+    min = Math.max(0, Math.min(1439, min));
+    onSlotClick(band.date, min);
+  };
+
+  const handleBlock = (e: MouseEvent, scheduleId: string) => {
+    e.stopPropagation();
+    if (editable && onBlockClick) onBlockClick(scheduleId);
+  };
+
   return (
     <div
-      className={`bands ${density}${focus ? ' focus' : ''}`}
+      className={`bands ${density}${focus ? ' focus' : ''}${editable ? ' editable' : ''}`}
       style={style}
       onMouseMove={handleMove}
       onMouseLeave={() => onHover(null, null)}
@@ -146,7 +179,7 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
                 <div className="empty-day">本日无日程 · 全天空闲</div>
               ) : (
                 <>
-                  <div className="lanes">
+                  <div className="lanes" onClick={(e) => handleSlot(e, band)}>
                     {HOURS.map((h) => {
                       const t = h * 60;
                       if (t <= tr.start || t >= tr.end) return null;
@@ -186,6 +219,7 @@ export default function DayBands({ bands, schedules, nowMin, density, hoKey, onH
                                   data-k={key}
                                   className={`sb-block t-${s.type}${focus ? '' : ' idl'}${key === hoKey ? ' ho' : ''}${slim ? ' slim' : ''}`}
                                   style={{ left: x(Math.max(occ.startMin, tr.start)), width: `${((Math.min(occ.endMin, tr.end) - Math.max(occ.startMin, tr.start)) / span) * 100}%`, background: s.color, color: textOn(s.color) }}
+                                  onClick={(e) => handleBlock(e, s.id)}
                                 >
                                   {!slim && <span className="blk-title">{s.title}</span>}
                                 </div>

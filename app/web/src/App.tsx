@@ -7,6 +7,8 @@ import { fetchMeta, fetchSchedules, type Meta } from './api';
 import Header from './components/Header';
 import DayBands, { type Band, type HoverInfo } from './components/DayBands';
 import BlockTooltip from './components/BlockTooltip';
+import ScheduleModal, { type SlotPrefill } from './components/ScheduleModal';
+import SettingsModal from './components/SettingsModal';
 
 type View = 'week' | 'day';
 
@@ -23,6 +25,13 @@ export default function App() {
   const [hint, setHint] = useState<string | null>(null);
   const tipTimer = useRef<number | undefined>(undefined);
   const hintTimer = useRef<number | undefined>(undefined);
+  const [editor, setEditor] = useState<
+    | { mode: 'create'; prefill: SlotPrefill | null }
+    | { mode: 'edit'; schedule: Schedule }
+    | null
+  >(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const editable = !!meta && !meta.readOnly;
 
   useEffect(() => {
     return () => {
@@ -47,11 +56,49 @@ export default function App() {
     load();
   }, [load]);
 
-  // 占位提示（v0.3 顶栏按钮暂未接入弹窗，提示下一轮接入内容）
+  // 静默刷新（保存/删除/设置后调用，不闪 loading）
+  const refresh = useCallback(async () => {
+    try {
+      const [m, list] = await Promise.all([fetchMeta(), fetchSchedules()]);
+      setMeta(m);
+      setSchedules(list);
+    } catch {
+      setLoadState('error');
+    }
+  }, []);
+
+  // Snackbar 轻提示（操作反馈；见 03-ui-spec §5）
   const showHint = useCallback((msg: string) => {
     setHint(msg);
     if (hintTimer.current) window.clearTimeout(hintTimer.current);
     hintTimer.current = window.setTimeout(() => setHint(null), 2600);
+  }, []);
+
+  const onModalDone = useCallback(
+    (msg: string) => {
+      setEditor(null);
+      refresh();
+      showHint(msg);
+    },
+    [refresh, showHint],
+  );
+  const onSettingsDone = useCallback(
+    (msg: string) => {
+      setSettingsOpen(false);
+      refresh();
+      showHint(msg);
+    },
+    [refresh, showHint],
+  );
+  const openEdit = useCallback(
+    (id: string) => {
+      const s = schedules.find((x) => x.id === id);
+      if (s) setEditor({ mode: 'edit', schedule: s });
+    },
+    [schedules],
+  );
+  const openSlot = useCallback((date: string, startMin: number) => {
+    setEditor({ mode: 'create', prefill: { date, startMin, endMin: Math.min(1440, startMin + 60) } });
   }, []);
 
   // 当前时间线（每分钟刷新）
@@ -189,8 +236,8 @@ export default function App() {
         onPrev={() => nav(-1)}
         onNext={() => nav(1)}
         onToday={() => setAnchor(today)}
-        onNew={() => showHint('＋ 新建：编辑弹窗将在下一验收轮接入（本轮仅验收顶栏）')}
-        onSettings={() => showHint('设置：学期起点/结束/周数面板将在下一验收轮接入')}
+        onNew={() => setEditor({ mode: 'create', prefill: null })}
+        onSettings={() => setSettingsOpen(true)}
       />
 
       <main className="board-scroll">
@@ -210,10 +257,13 @@ export default function App() {
               density={view}
               hoKey={hoKey}
               onHover={handleHover}
+              editable={editable}
+              onBlockClick={openEdit}
+              onSlotClick={openSlot}
             />
             {meta && meta.termStart == null && (
               <div className="notice">
-                尚未设置学期起点（单双周将不可用）。编辑功能将在下一版本开放，届时可于「设置」中填写。
+                尚未设置学期起点（单双周将不可用，顶部不显示「第 N 周」）。可在「⚙ 设置」中填写第 1 周周一。
               </div>
             )}
           </>
@@ -221,6 +271,29 @@ export default function App() {
       </main>
 
       <BlockTooltip data={tip} hidden={!tipVisible} />
+
+      {editor && (
+        <ScheduleModal
+          mode={editor.mode}
+          initial={
+            editor.mode === 'create'
+              ? { schedule: null, prefill: editor.prefill }
+              : { schedule: editor.schedule, prefill: null }
+          }
+          schedules={schedules}
+          termStart={meta?.termStart ?? null}
+          onClose={() => setEditor(null)}
+          onDone={onModalDone}
+          onNotify={showHint}
+        />
+      )}
+      {settingsOpen && (
+        <SettingsModal
+          onClose={() => setSettingsOpen(false)}
+          onDone={onSettingsDone}
+          onNotify={showHint}
+        />
+      )}
 
       <footer className="app-foot">
         <span className="tip-hint">hover 方块查看详情{meta?.readOnly ? ' · 只读模式（请在桌面主机编辑）' : ''}</span>

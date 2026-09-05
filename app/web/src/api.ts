@@ -1,3 +1,5 @@
+import type { Schedule } from '../../shared/src/types';
+
 export interface Meta {
   version: string;
   readOnly: boolean;
@@ -7,20 +9,95 @@ export interface Meta {
 }
 
 export interface ApiScheduleList {
-  schedules: import('../../shared/src/types').Schedule[];
+  schedules: Schedule[];
+}
+
+/** 服务端冲突摘要（同一对日程+时段跨多日期去重，保留样例） */
+export interface SummarizedConflict {
+  date: string;
+  dates: string[];
+  total: number;
+  a: { scheduleId: string; title: string; type: string; startMin: number; endMin: number };
+  b: { scheduleId: string; title: string; type: string; startMin: number; endMin: number };
+}
+
+export interface ConflictsPayload {
+  errors: SummarizedConflict[];
+  warnings: SummarizedConflict[];
+}
+
+export interface SaveResult {
+  schedule: Schedule;
+  conflicts: ConflictsPayload;
+}
+
+/** 可编辑提交载荷（服务端忽略 rev/deletedAt/lastWriter 等同步元字段） */
+export type ScheduleDraft = Pick<
+  Schedule,
+  'title' | 'notes' | 'type' | 'color' | 'rule' | 'activeFrom' | 'activeTo' | 'overrides'
+> & { force?: boolean };
+
+export class ApiError extends Error {
+  status: number;
+  body: any;
+  constructor(status: number, body: any) {
+    super(`HTTP ${status}: ${String(body?.message ?? body?.error ?? '')}`);
+    this.status = status;
+    this.body = body;
+  }
 }
 
 async function getJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new ApiError(res.status, await safeJson(res));
   return (await res.json()) as T;
+}
+
+async function sendJson<T>(method: string, url: string, body?: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) throw new ApiError(res.status, await safeJson(res));
+  return (await res.json()) as T;
+}
+
+async function safeJson(res: Response): Promise<any> {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
 }
 
 export async function fetchMeta(): Promise<Meta> {
   return getJson<Meta>('/api/meta');
 }
 
-export async function fetchSchedules(): Promise<import('../../shared/src/types').Schedule[]> {
+export async function fetchSchedules(): Promise<Schedule[]> {
   const data = await getJson<ApiScheduleList>('/api/schedules');
   return data.schedules;
+}
+
+export async function createSchedule(draft: ScheduleDraft): Promise<SaveResult> {
+  return sendJson<SaveResult>('POST', '/api/schedules', draft);
+}
+
+export async function updateSchedule(id: string, draft: ScheduleDraft): Promise<SaveResult> {
+  return sendJson<SaveResult>('PUT', `/api/schedules/${id}`, draft);
+}
+
+export async function removeSchedule(id: string): Promise<void> {
+  await sendJson<{ ok: boolean }>('DELETE', `/api/schedules/${id}`);
+}
+
+export async function fetchSettings(): Promise<Record<string, unknown>> {
+  const data = await getJson<{ settings: Record<string, unknown> }>('/api/settings');
+  return data.settings;
+}
+
+export async function saveSettings(patch: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const data = await sendJson<{ settings: Record<string, unknown> }>('PUT', '/api/settings', { settings: patch });
+  return data.settings;
 }
