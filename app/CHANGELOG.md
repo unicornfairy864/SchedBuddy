@@ -2,6 +2,13 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.4] - 2026-09-05
+
+### Fixed（"今天"跨时区差一天）
+- `todayStr()` 原用 `new Date().toISOString()`（UTC 日期）取今天 → 在东八区等时区**本地 00:00–07:59** 期间会把"今天"当昨天。
+- 改为取**本地日期**（`getFullYear/getMonth/getDate`）；影响：「今天」按钮跳转、今天日带高亮/徽标、`/api/meta.now`、第 N 周起算等全部修复。
+- 实测验证：本地 2026-09-06 00:xx（UTC 仍 09-05）时 `todayStr()` 现返回本地日期 ✓。
+
 ## [0.3.3] - 2026-09-05
 
 ### Changed（本机底栏：局域网访问地址 + 复制）

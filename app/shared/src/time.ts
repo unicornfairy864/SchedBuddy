@@ -22,7 +22,9 @@ export function fromEpochDay(n: number): DateStr {
 }
 
 export function todayStr(): DateStr {
-  return fromEpochDay(epochDay(new Date().toISOString().slice(0, 10) as DateStr));
+  // 注意：必须用“本地”日期，不能用 toISOString()（那是 UTC，东八区凌晨会差一天）
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
 export function addDays(s: DateStr, n: number): DateStr {
