@@ -308,6 +308,20 @@ body {
 .sb-tip.left::after { left: calc(100% - 44px); }
 .sb-tip.below.left { transform: translate(calc(-100% + 44px), 0); }
 .sb-tip.below.left::after { bottom: auto; top: -5px; }
+/* 固定态（点方块后）：允许在窗内点「编辑」按钮 */
+.sb-tip.act { pointer-events: auto; }
+.sb-tip.act { cursor: default; }
+.tip-actions { margin-top: 9px; border-top: 1px dashed rgba(255, 255, 255, 0.16); padding-top: 8px; }
+.tip-edit {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(62, 175, 155, 0.22); color: #eafaf6;
+  border-radius: 9px; padding: 7px 12px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: background .15s, transform .15s var(--ease);
+}
+.tip-edit:hover { background: rgba(62, 175, 155, 0.45); }
+.tip-edit:active { transform: scale(0.97); }
 .tip-head { display: flex; align-items: center; gap: 9px; }
 .tip-color { width: 16px; height: 16px; border-radius: 4px; flex: none; }
 .tip-head strong { font-size: 16.5px; }

@@ -10,7 +10,20 @@ export interface TooltipData {
   y: number; // 触发块顶部中心（视口坐标）
 }
 
-export default function BlockTooltip({ data, hidden }: { data: TooltipData | null; hidden: boolean }) {
+export default function BlockTooltip({
+  data,
+  hidden,
+  interactive = false,
+  onEdit,
+  onHide,
+}: {
+  data: TooltipData | null;
+  hidden: boolean;
+  /** 本机可编辑且该悬浮窗被点击固定：窗内出现「编辑」按钮且可点击 */
+  interactive?: boolean;
+  onEdit?: (scheduleId: string) => void;
+  onHide?: () => void;
+}) {
   // 淡入：先以 opacity:0 挂载并让浏览器绘制一帧，再于下一帧加 .in 触发过渡；
   // 淡出：移除 .in 即可（组件仍挂载 170ms 供动画播放）。
   const [entered, setEntered] = useState(false);
@@ -41,8 +54,9 @@ export default function BlockTooltip({ data, hidden }: { data: TooltipData | nul
 
   return (
     <div
-      className={`sb-tip${below ? ' below' : ''}${left ? ' left' : ''}${entered && !hidden ? ' in' : ''}`}
+      className={`sb-tip${below ? ' below' : ''}${left ? ' left' : ''}${interactive ? ' act' : ''}${entered && !hidden ? ' in' : ''}`}
       style={{ top: below ? y + 22 : y - 8, left: clampedX }}
+      onMouseLeave={() => interactive && onHide?.()}
     >
       <div className="tip-head">
         <span className="tip-color" style={{ background: s.color }} />
@@ -66,6 +80,20 @@ export default function BlockTooltip({ data, hidden }: { data: TooltipData | nul
         {ruleSummary(s.rule, s.activeFrom, s.activeTo)}
         {s.overrides.length > 0 ? ` · ${s.overrides.length} 条单次例外` : ''}
       </p>
+      {interactive && onEdit && (
+        <div className="tip-actions">
+          <button
+            type="button"
+            className="tip-edit"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(s.id);
+            }}
+          >
+            ✎ 编辑
+          </button>
+        </div>
+      )}
     </div>
   );
 }

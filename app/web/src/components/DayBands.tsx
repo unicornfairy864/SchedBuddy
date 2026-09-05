@@ -60,9 +60,9 @@ interface Props {
   density: 'day' | 'week';
   hoKey: string | null;
   onHover: (info: HoverInfo | null, key: string | null) => void;
-  /** 本机可编辑态：方块可点击编辑、时间区空白处点击快速新建 */
+  /** 本机可编辑态：方块点击 → 固定悬浮窗（含「编辑」按钮）、时间区空白处点击快速新建 */
   editable?: boolean;
-  onBlockClick?: (scheduleId: string) => void;
+  onPin?: (key: string) => void;
   onSlotClick?: (date: DateStr, startMin: number) => void;
 }
 
@@ -74,7 +74,7 @@ export default function DayBands({
   hoKey,
   onHover,
   editable,
-  onBlockClick,
+  onPin,
   onSlotClick,
 }: Props) {
   const laneH = density === 'day' ? 52 : 31;
@@ -124,9 +124,23 @@ export default function DayBands({
     onSlotClick(band.date, min);
   };
 
-  const handleBlock = (e: MouseEvent, scheduleId: string) => {
+  // 指针离开容器：若移向悬浮窗本体（去点「编辑」按钮）则保留，否则隐藏
+  const handleLeave = (e: MouseEvent) => {
+    const rt = e.relatedTarget as Element | null;
+    if (rt?.closest?.('.sb-tip')) return;
+    onHover(null, null);
+  };
+
+  // 点击方块（可编辑态）：显示并固定悬浮窗（随后可在窗内点「编辑」）
+  const handleBlock = (e: MouseEvent, key: string, occ: Occurrence, schedule: Schedule) => {
     e.stopPropagation();
-    if (editable && onBlockClick) onBlockClick(scheduleId);
+    if (!editable) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    onHover(
+      { occ, schedule, x: rect.left + rect.width / 2, y: rect.top },
+      key,
+    );
+    onPin?.(key);
   };
 
   return (
@@ -134,7 +148,7 @@ export default function DayBands({
       className={`bands ${density}${focus ? ' focus' : ''}${editable ? ' editable' : ''}`}
       style={style}
       onMouseMove={handleMove}
-      onMouseLeave={() => onHover(null, null)}
+      onMouseLeave={handleLeave}
     >
       {bands.map((band) => {
         const pack = band.pack;
@@ -219,7 +233,7 @@ export default function DayBands({
                                   data-k={key}
                                   className={`sb-block t-${s.type}${focus ? '' : ' idl'}${key === hoKey ? ' ho' : ''}${slim ? ' slim' : ''}`}
                                   style={{ left: x(Math.max(occ.startMin, tr.start)), width: `${((Math.min(occ.endMin, tr.end) - Math.max(occ.startMin, tr.start)) / span) * 100}%`, background: s.color, color: textOn(s.color) }}
-                                  onClick={(e) => handleBlock(e, s.id)}
+                                  onClick={(e) => handleBlock(e, key, occ, s)}
                                 >
                                   {!slim && <span className="blk-title">{s.title}</span>}
                                 </div>

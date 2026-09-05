@@ -1,6 +1,6 @@
 {
   "name": "schedbuddy",
-  "version": "0.2.31",
+  "version": "0.2.32",
   "private": true,
   "description": "SchedBuddy 大学生时间管理：桌面(Electron)+局域网Web双端，单用户日程可视化。",
   "workspaces": [

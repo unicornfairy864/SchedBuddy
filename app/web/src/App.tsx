@@ -22,6 +22,8 @@ export default function App() {
   const [tip, setTip] = useState<HoverInfo | null>(null);
   const [tipVisible, setTipVisible] = useState(false);
   const [hoKey, setHoKey] = useState<string | null>(null);
+  /** 点击方块固定悬浮窗（固定态下悬浮窗可交互，含「编辑」按钮） */
+  const [pinned, setPinned] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const tipTimer = useRef<number | undefined>(undefined);
   const hintTimer = useRef<number | undefined>(undefined);
@@ -211,18 +213,53 @@ export default function App() {
   }, [view, visibleDates, meta?.termStart]);
 
   // 悬浮窗：隐藏时先淡出再卸载，保证淡入淡出动画
-  const handleHover = (info: HoverInfo | null, key: string | null) => {
+  const hideTip = useCallback(() => {
+    setPinned(null);
     if (tipTimer.current) window.clearTimeout(tipTimer.current);
-    if (!info) {
-      setHoKey(null);
-      setTipVisible(false);
-      tipTimer.current = window.setTimeout(() => setTip(null), 220);
-    } else {
-      setTip(info);
-      setHoKey(key);
-      setTipVisible(true);
-    }
-  };
+    setHoKey(null);
+    setTipVisible(false);
+    tipTimer.current = window.setTimeout(() => setTip(null), 220);
+  }, []);
+
+  // 指针移动（hover）→ 普通显示/隐藏；固定态下忽略“指针离开”类隐藏
+  const handleHover = useCallback(
+    (info: HoverInfo | null, key: string | null) => {
+      if (tipTimer.current) window.clearTimeout(tipTimer.current);
+      if (!info) {
+        if (pinned) return;
+        setHoKey(null);
+        setTipVisible(false);
+        tipTimer.current = window.setTimeout(() => setTip(null), 220);
+      } else {
+        setTip(info);
+        setHoKey(key);
+        setTipVisible(true);
+      }
+    },
+    [pinned],
+  );
+
+  // 点击方块 → 固定悬浮窗（桌面可移鼠标去点「编辑」；移动端点按即固定）
+  const handlePin = useCallback((key: string) => setPinned(key), []);
+
+  // 固定态：点窗外任意处 / Esc → 取消固定并淡出
+  useEffect(() => {
+    if (!pinned) return;
+    const down = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      if (t?.closest?.('.sb-tip') || t?.closest?.('.sb-block')) return;
+      hideTip();
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') hideTip();
+    };
+    window.addEventListener('pointerdown', down, true);
+    window.addEventListener('keydown', esc);
+    return () => {
+      window.removeEventListener('pointerdown', down, true);
+      window.removeEventListener('keydown', esc);
+    };
+  }, [pinned, hideTip]);
 
   return (
     <div className="app">
@@ -258,7 +295,7 @@ export default function App() {
               hoKey={hoKey}
               onHover={handleHover}
               editable={editable}
-              onBlockClick={openEdit}
+              onPin={handlePin}
               onSlotClick={openSlot}
             />
             {meta && meta.termStart == null && (
@@ -270,7 +307,16 @@ export default function App() {
         )}
       </main>
 
-      <BlockTooltip data={tip} hidden={!tipVisible} />
+      <BlockTooltip
+        data={tip}
+        hidden={!tipVisible}
+        interactive={editable && pinned !== null}
+        onEdit={(id) => {
+          hideTip();
+          openEdit(id);
+        }}
+        onHide={hideTip}
+      />
 
       {editor && (
         <ScheduleModal
@@ -296,7 +342,12 @@ export default function App() {
       )}
 
       <footer className="app-foot">
-        <span className="tip-hint">hover 方块查看详情{meta?.readOnly ? ' · 只读模式（请在桌面主机编辑）' : ''}</span>
+        <span className="tip-hint">
+          hover 方块查看详情
+          {meta?.readOnly
+            ? ' · 只读模式（请在桌面主机编辑）'
+            : ' · 本机可编辑：点击方块 → 悬浮窗「✎ 编辑」'}
+        </span>
       </footer>
 
       <div className={hint ? 'snack in' : 'snack'} role="status" aria-live="polite">{hint}</div>
