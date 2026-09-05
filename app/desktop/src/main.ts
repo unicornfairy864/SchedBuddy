@@ -12,6 +12,9 @@ import http from 'node:http';
 
 declare const __VERSION__: string;
 
+// 本地/局域网程序：关闭 Electron HTTP 缓存（配合服务端 no-store），杜绝旧页面残留
+app.commandLine.appendSwitch('disable-http-cache');
+
 let win: BrowserWindow | null = null;
 let serverProc: ChildProcess | null = null;
 

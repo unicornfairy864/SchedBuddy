@@ -2,6 +2,13 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.7] - 2026-09-05
+
+### Changed（本地/局域网：全站不做缓存）
+- 采纳建议：本地/局域网单用户程序缓存收益≈0 而旧内容残留风险高 → 服务端全站 `Cache-Control: no-store`（HTML/静态资源/API 均不再缓存）。
+- 桌面端：`disable-http-cache` 开关 + 保留启动 `session.defaultSession.clearCache()`，杜绝命中旧页面。
+- 不再维护"桌面拷贝"产物位置约定（产物以仓库 `desktop/release/win-unpacked` 为准）。
+
 ## [0.3.6] - 2026-09-05
 
 ### Fixed（桌面端显示旧页面的缓存问题）
