@@ -543,6 +543,35 @@ body {
 .modal input.num { width: 96px; }
 .modal input.time { width: 112px; }
 
+/* 友好日期输入：年/月/日三段框 + 右侧日历按钮 */
+.datefield { display: inline-flex; align-items: center; gap: 2px; }
+.df-segbox { display: inline-flex; align-items: center; }
+.df-seg {
+  font: inherit; color: var(--text);
+  border: 1px solid var(--line); background: #fff;
+  border-radius: 10px; padding: 8px 4px;
+  text-align: center; font-variant-numeric: tabular-nums;
+  cursor: text; caret-color: var(--accent);
+  transition: border-color .15s, box-shadow .15s;
+}
+.df-seg.y { width: 4.1em; }
+.df-seg.m, .df-seg.d { width: 2.5em; }
+.df-seg:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62, 175, 155, 0.16);
+}
+.df-suf { color: var(--text2); font-size: 13px; margin: 0 4px 0 2px; }
+.df-cal { position: relative; display: inline-flex; margin-left: 4px; }
+.df-cal button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border: 1px solid var(--line); background: #fff;
+  border-radius: 10px; color: var(--text2); cursor: pointer;
+  transition: all .15s;
+}
+.df-cal button:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.df-cal button:active { transform: scale(0.93); }
+.df-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
 /* 自绘下拉（单双周等；原生 select 展开列表无法跨浏览器自定义样式） */
 .dd { position: relative; display: inline-flex; }
 .dd-btn {

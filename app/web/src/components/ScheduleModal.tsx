@@ -13,6 +13,7 @@ import {
   type SummarizedConflict,
 } from '../api';
 import Dropdown from './Dropdown';
+import DateField from './DateField';
 
 /* ---------- 工具 ---------- */
 
@@ -447,8 +448,8 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
                 {f.weekly.oddEven !== 'none' && (
                   <label className="fld inline">
                     <span className="fld-label">第 1 周周一</span>
-                    <input type="date" value={f.weekly.weekStart} placeholder={termStart ?? ''}
-                      onChange={(e) => patchWeekly({ weekStart: e.target.value })} />
+                    <DateField value={f.weekly.weekStart} ariaLabel="第 1 周周一"
+                      onChange={(v) => patchWeekly({ weekStart: v })} />
                   </label>
                 )}
               </div>
@@ -458,7 +459,8 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
             <div className="rule-sub">
               <label className="fld inline">
                 <span className="fld-label">起始日期</span>
-                <input type="date" value={f.interval.startDate} onChange={(e) => patchInterval({ startDate: e.target.value })} />
+                <DateField value={f.interval.startDate} ariaLabel="起始日期"
+                  onChange={(v) => patchInterval({ startDate: v })} />
               </label>
               <label className="fld inline">
                 <span className="fld-label">每</span>
@@ -472,7 +474,8 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
             <div className="rule-sub">
               <label className="fld inline">
                 <span className="fld-label">日期</span>
-                <input type="date" value={f.once.date} onChange={(e) => patchOnce({ date: e.target.value })} />
+                <DateField value={f.once.date} ariaLabel="日期"
+                  onChange={(v) => patchOnce({ date: v })} />
               </label>
             </div>
           )}
@@ -506,9 +509,11 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
           <div className="rule-sub">
             <span className="fld-label">生效范围（可选）</span>
             <div className="range-pair">
-              <input type="date" value={f.activeFrom} onChange={(e) => set({ activeFrom: e.target.value })} aria-label="生效起始" />
+              <DateField value={f.activeFrom} ariaLabel="生效起始"
+                onChange={(v) => set({ activeFrom: v })} />
               <i className="dash">至</i>
-              <input type="date" value={f.activeTo} onChange={(e) => set({ activeTo: e.target.value })} aria-label="生效结束" />
+              <DateField value={f.activeTo} ariaLabel="生效结束"
+                onChange={(v) => set({ activeTo: v })} />
               {(f.activeFrom || f.activeTo) && (
                 <button type="button" className="mini-btn" onClick={() => set({ activeFrom: '', activeTo: '' })}>清除</button>
               )}
