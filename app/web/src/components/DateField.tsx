@@ -38,6 +38,7 @@ export default function DateField({
   ariaLabel,
   className = '',
   defaultDate,
+  onDayDone,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -45,6 +46,8 @@ export default function DateField({
   className?: string;
   /** 参考日期（通常＝新建时点选的那天）：部分段为空时自动补齐 */
   defaultDate?: string;
+  /** 「日」段输满时回调（用于跨日期组联动，如生效范围 起点日 → 终点年） */
+  onDayDone?: () => void;
 }) {
   const [segs, setSegs] = useState<[string, string, string]>(() => splitSegs(value));
   // 实时镜像当前三段值：blur/跳格可能在 React 提交前触发，避免用旧闭包回退
@@ -91,6 +94,8 @@ export default function DateField({
       }
     }
     if (clean.length === SEG_MAX[i] && i < 2) refs[i + 1].current?.focus();
+    // 「日」段输满：无组内下一段，通知外部（如跳到终点日期的「年」）
+    if (clean.length === SEG_MAX[i] && i === 2) onDayDone?.();
   };
 
   const nav = (i: number, e: ReactKeyboardEvent<HTMLInputElement>) => {

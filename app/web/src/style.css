@@ -575,14 +575,15 @@ body {
   width: auto; flex: none;
   font: inherit; color: var(--text);
   border: 1px solid var(--line); background: #fff;
-  border-radius: 10px; padding: 7px 5px;
+  border-radius: 10px; padding: 8px 4px;
   text-align: center; font-variant-numeric: tabular-nums;
   cursor: text; caret-color: var(--accent);
   transition: border-color .15s, box-shadow .15s;
 }
-.modal .datefield .df-seg.y { width: 5ch; }
+/* 框宽按 0.2.42 量（em）：年 4.1em、月/日 2.5em；此前“平摊整行”为通用 width:100% 覆盖所致，已修复 */
+.modal .datefield .df-seg.y { width: 4.1em; }
 .modal .datefield .df-seg.m,
-.modal .datefield .df-seg.d { width: 3ch; }
+.modal .datefield .df-seg.d { width: 2.5em; }
 .modal .datefield .df-seg:focus {
   outline: none; border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(62, 175, 155, 0.16);

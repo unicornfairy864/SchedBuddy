@@ -180,6 +180,12 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   const [serverIssues, setServerIssues] = useState<string[]>([]);
   /** 生效范围启用开关（勾选后才显示起止日期；关闭即清空范围） */
   const [rangeOn, setRangeOn] = useState(() => Boolean(initial.schedule?.activeFrom || initial.schedule?.activeTo));
+  // 生效范围：起点「日」输满 → 焦点跳到终点「年」
+  const activeToWrap = useRef<HTMLSpanElement>(null);
+  const focusToYear = () => {
+    const y = activeToWrap.current?.querySelector<HTMLInputElement>('.df-seg.y');
+    y?.focus();
+  };
 
   const editing = initial.schedule;
   const set = (patch: Partial<FormState>) => setF((prev) => ({ ...prev, ...patch }));
@@ -521,11 +527,14 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
             {rangeOn && (
               <>
                 <div className="range-pair">
-                  <DateField value={f.activeFrom} ariaLabel="生效起始"
-                    onChange={(v) => set({ activeFrom: v })} />
+                  <DateField value={f.activeFrom} ariaLabel="生效起始" defaultDate={initial.prefill?.date}
+                    onChange={(v) => set({ activeFrom: v })}
+                    onDayDone={focusToYear} />
                   <i className="dash">至</i>
-                  <DateField value={f.activeTo} ariaLabel="生效结束"
-                    onChange={(v) => set({ activeTo: v })} />
+                  <span ref={activeToWrap}>
+                    <DateField value={f.activeTo} ariaLabel="生效结束"
+                      onChange={(v) => set({ activeTo: v })} />
+                  </span>
                   {(f.activeFrom || f.activeTo) && (
                     <button type="button" className="mini-btn" onClick={() => set({ activeFrom: '', activeTo: '' })}>清除</button>
                   )}
