@@ -5,7 +5,7 @@
 ## 1. 文档体系
 
 ```
-docs/项目说明.md          总纲：全局要求/已完成/未来规划（仓库根 docs/，与 app/ 同级）
+app/docs/项目说明.md       总纲：全局要求/已完成/未来规划（v0.2.22 由仓库根 docs/ 迁入）
 app/docs/
 ├─ 00-decisions.md        需求基线 + 决策记录（含 术语约定）
 ├─ 01-architecture.md     架构、目录、里程碑

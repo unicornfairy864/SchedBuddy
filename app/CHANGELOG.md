@@ -2,6 +2,12 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.22] - 2026-09-04
+
+### Docs
+- 项目总纲由仓库根 `docs/项目说明.md` 迁入 `app/docs/项目说明.md`（内容并入统一文档体系），更新 README/05/07 引用。
+- 仓库根 `docs/` 目录因被其它进程占用未能删除（内容已全部迁出；git 不跟踪空目录，无实际影响）。
+
 ## [0.2.21] - 2026-09-04
 
 ### Docs（文档详细化 + 规范）
