@@ -1,5 +1,7 @@
 # SchedBuddy 桌面打包（electron-builder）
-# 从仓库 app/ 目录执行：npx electron-builder --dir --win -c electron-builder.yml
+# 从仓库 app/ 目录执行：npm run dist:dir
+# 架构：后端由随包 node.exe（系统 Node）子进程运行 → 不打包成 asar（子进程 Node 需读真实文件），
+#       且 better-sqlite3 不重编译成 Electron ABI（始终为系统 Node ABI，见 README「环境切换」）。
 appId: local.schedbuddy.desktop
 productName: SchedBuddy
 directories:
@@ -9,11 +11,8 @@ files:
   - server/dist/**
   - web/dist/**
   - "!**/*.map"
-asar: true
-# 原生模块（better-sqlite3）从 asar 解包，Electron 运行时自动重定向加载
-asarUnpack:
-  - "**/node_modules/better-sqlite3/**"
-npmRebuild: true
+asar: false
+npmRebuild: false
 win:
   target:
     - target: dir            # win-unpacked 目录（直接运行 SchedBuddy.exe，可自行压 RAR）

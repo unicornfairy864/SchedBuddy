@@ -1,34 +1,80 @@
 // SchedBuddy 桌面壳：Electron 主进程
-// 职责：内嵌启动 @schedbuddy/server（同一进程）→ 打开本机窗口加载 http://127.0.0.1:PORT
-//       本机为唯一写端（回环地址），局域网浏览器仍只读（见 server/src/api.ts writeGuard）。
-// 打包：electron-builder（--dir → win-unpacked 可运行目录）。数据写入用户数据目录。
+//
+// 架构（避免 better-sqlite3 的 Node/Electron ABI 手动切换）：
+//   后端始终由「系统 Node（打包时随包携带 node.exe）」作为子进程运行，
+//   Electron 只负责窗口渲染 http://127.0.0.1:PORT —— 因此 better-sqlite3 只编译给系统 Node。
+// 本机 = 唯一写端（回环）；局域网浏览器只读（见 server/src/api.ts writeGuard）。
 import { app, BrowserWindow, dialog } from 'electron';
+import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
+import http from 'node:http';
 
 declare const __VERSION__: string;
 
 let win: BrowserWindow | null = null;
+let serverProc: ChildProcess | null = null;
+
+function serverEntryPath(): string {
+  return join(app.getAppPath(), 'server', 'dist', 'index.cjs');
+}
+
+function nodeExecutable(): string {
+  // 打包后：resources/node/node.exe（由 dist:dir 收尾脚本复制）；开发：直接走 PATH 的 node
+  if (app.isPackaged) {
+    const cand = join(process.resourcesPath, 'node', 'node.exe');
+    if (existsSync(cand)) return cand;
+  }
+  return process.env.SCHEDBUDDY_NODE || 'node';
+}
+
+function waitServerReady(port: number, timeoutMs = 20000): Promise<void> {
+  const start = Date.now();
+  return new Promise((resolve, reject) => {
+    const ping = () => {
+      const req = http.get(`http://127.0.0.1:${port}/api/meta`, (res) => {
+        res.resume();
+        if (res.statusCode === 200) return resolve();
+        retry();
+      });
+      req.on('error', retry);
+    };
+    const retry = () => {
+      if (Date.now() - start > timeoutMs) return reject(new Error(`后端 ${timeoutMs / 1000}s 内未就绪`));
+      setTimeout(ping, 300);
+    };
+    ping();
+  });
+}
 
 async function boot(): Promise<void> {
-  // 数据/静态目录解析（可被环境变量覆盖；打包后默认落在用户数据目录与 asar 内）
-  const appPath = app.getAppPath();
-  process.env.SCHEDBUDDY_DATA = process.env.SCHEDBUDDY_DATA || join(app.getPath('userData'), 'data');
-  process.env.SCHEDBUDDY_WEB = process.env.SCHEDBUDDY_WEB || join(appPath, 'web', 'dist');
   const port = Number(process.env.SCHEDBUDDY_PORT || 3876);
-
-  const serverEntry = join(appPath, 'server', 'dist', 'index.cjs');
-  if (!existsSync(serverEntry)) {
-    dialog.showErrorBox('SchedBuddy', `未找到后端入口：\n${serverEntry}\n\n请先执行 npm run build。`);
+  const entry = serverEntryPath();
+  if (!existsSync(entry)) {
+    dialog.showErrorBox('SchedBuddy', `未找到后端入口：\n${entry}\n\n请先执行 npm run build。`);
     app.quit();
     return;
   }
+  const nodeExe = nodeExecutable();
 
   try {
-    // 内嵌启动后端（server 包导出 startServer；其 CJS 入口在 require.main===module 时才自动启动）
-    const { startServer } = require(serverEntry) as typeof import('../../server/src/index');
-    const srv = await startServer({ port, quiet: true });
-    const url = srv.url;
+    // 拉起后端（系统 Node）
+    serverProc = spawn(nodeExe, [entry], {
+      env: {
+        ...process.env,
+        SCHEDBUDDY_DATA: process.env.SCHEDBUDDY_DATA || join(app.getPath('userData'), 'data'),
+        SCHEDBUDDY_WEB: process.env.SCHEDBUDDY_WEB || join(app.getAppPath(), 'web', 'dist'),
+        SCHEDBUDDY_PORT: String(port),
+      },
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    serverProc.on('exit', (code) => {
+      if (!win) app.quit();
+      else dialog.showErrorBox('SchedBuddy', `后端意外退出（code=${code}）`);
+    });
+
+    await waitServerReady(port);
     win = new BrowserWindow({
       width: 1180,
       height: 800,
@@ -37,23 +83,28 @@ async function boot(): Promise<void> {
       title: `SchedBuddy v${typeof __VERSION__ !== 'undefined' ? __VERSION__ : 'dev'}`,
       autoHideMenuBar: true,
       backgroundColor: '#F4F7FB',
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true,
-      },
+      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
     });
-    win.loadURL(url);
+    win.loadURL(`http://127.0.0.1:${port}`);
     win.on('closed', () => {
       win = null;
     });
   } catch (e) {
     dialog.showErrorBox('SchedBuddy 启动失败', e instanceof Error ? e.message : String(e));
+    serverProc?.kill();
     app.quit();
   }
 }
 
-// 单实例：重复启动时聚焦既有窗口
+app.on('before-quit', () => {
+  try {
+    serverProc?.kill();
+  } catch {
+    /* ignore */
+  }
+  serverProc = null;
+});
+
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();

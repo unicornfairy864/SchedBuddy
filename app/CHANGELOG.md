@@ -2,6 +2,13 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.5] - 2026-09-05
+
+### Changed（桌面依赖架构：无需 Node/Electron ABI 手动切换）
+- 桌面壳改为**随包 `node.exe` 子进程拉起后端**（Electron 只渲染窗口）→ `better-sqlite3` 仅编译给系统 Node，Web 与桌面共用一份，`npm start` 与 `npm run desktop` 之间**不再需要 electron-rebuild / npm rebuild 切换**。
+- electron-builder 设 `asar:false`（后端子进程需读真实文件）+ `npmRebuild:false`（不重编译原生模块）；`dist:dir` 收尾自动复制 `resources/node/node.exe`（新增 `scripts/copy-node.cjs`）。
+- 文档同步：README / `06-dev-conventions.md` 更新说明（含意外 ABI 报错的自救命令 `npm rebuild better-sqlite3`）。
+
 ## [0.3.4] - 2026-09-05
 
 ### Fixed（"今天"跨时区差一天）

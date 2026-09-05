@@ -44,20 +44,15 @@ npm test             # 规则引擎自测（15 组）
 
 ## 桌面端（Electron）· 环境切换与打包
 
-better-sqlite3 是**原生模块**，Electron 与系统 Node 的 ABI 互不通用，二者**互斥切换**（谁最后一次编译就服务谁）：
+**架构（v0.3.5 起，无需任何 ABI 切换）**：后端始终由**系统 Node**（打包时随包自带 `resources/node/node.exe`）以子进程运行，Electron 只渲染窗口 —— `better-sqlite3` 永远只编译给系统 Node，Web 与桌面共用一份，**不再需要 electron-rebuild 手动切换**（electron-builder 已设 `npmRebuild:false`）。
 
 ```powershell
 cd app
-# A) Web/服务模式（系统 Node ABI）
-npm rebuild better-sqlite3
-npm start
-
-# B) 桌面模式（Electron ABI）
-npx electron-rebuild -f -w better-sqlite3
-npm run desktop        # 开发运行：编译主进程并弹出 SchedBuddy 窗口
+npm run desktop        # 开发运行：编译主进程 → 拉起后端 → 弹出 SchedBuddy 窗口
 npm run dist:dir       # 打包 → desktop/release/win-unpacked\SchedBuddy.exe（目录即用，可压 RAR）
+npm start              # Web 模式照常，无需任何切换
 ```
 
-- 打包时 `electron-builder` 会自动为 Electron 重编译原生模块（无需手动 electron-rebuild）；**但打包后 ABI 已切到 Electron**，再跑 `npm start` 前需先执行 A 的 `npm rebuild better-sqlite3`。
 - 桌面数据写入系统用户数据目录 `%APPDATA%\SchedBuddy\data`（与仓库内 `app/data` 相互独立）。
-- 安装包（NSIS）与自定义图标为后续可选项（当前产出免安装目录）。
+- 产物为解包目录（后端子进程需读取真实文件）；分发时已含随包 `node.exe`。
+- 安装包（NSIS）与自定义图标为后续可选项。

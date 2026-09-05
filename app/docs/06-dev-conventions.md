@@ -16,12 +16,12 @@
 | `node scripts/build.mjs [shared\|server\|desktop]` | 按需单包构建 | 缺省 shared+server |
 | `npm run desktop` / `npm run dist:dir` | 桌面开发运行 / 打包 win-unpacked（Electron） | 见「原生模块 ABI 切换」 |
 
-### 原生模块 ABI 切换（better-sqlite3）
+### 原生模块（better-sqlite3）—— 单一 Node ABI，无需切换（v0.3.5 起）
 
-better-sqlite3 为原生模块，**Electron 与系统 Node 的 ABI 互斥**，切换运行环境必须重编译：
-- Web/服务模式（系统 Node ABI）：`npm rebuild better-sqlite3` → `npm start`
-- 桌面模式（Electron ABI）：`npx electron-rebuild -f -w better-sqlite3` → `npm run desktop` / `npm run dist:dir`
-- `electron-builder` 打包时会自动按 Electron 重编译原生模块，**打包后 ABI 已切为 Electron**；再跑 `npm start` 前须先切回系统 Node。
+- **架构**：后端始终由系统 Node 运行（Web 直跑；桌面壳以随包 `node.exe` 子进程拉起后端，Electron 只渲染窗口），因此 `better-sqlite3` **只编译给系统 Node**，Web 与桌面共用一份。
+- electron-builder 已设 `npmRebuild:false`，打包**不会**把它重编译成 Electron ABI；`npm run desktop` / `npm start` 之间无需任何 rebuild/electron-rebuild。
+- 若本机意外出现 ABI 报错（如曾用过 `electron-rebuild`），修复：`npm rebuild better-sqlite3`。
+- 桌面产物为解包目录并随包复制 `resources/node/node.exe`（`scripts/copy-node.cjs`，`dist:dir` 收尾自动执行）。
 - 完整说明见 `README.md`「桌面端（Electron）· 环境切换与打包」。
 
 ## 2. 目录职责（红线：依赖方向单向向下）
