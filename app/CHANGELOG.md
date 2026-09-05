@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.55] - 2026-09-05
+
+### Changed（板面细节）
+- `.band-body` 内边距改为左右对称（`8px 12px 0`，原右 12 / 左 0）。
+
 ## [0.2.54] - 2026-09-05
 
 ### Fixed（时段行对齐）
