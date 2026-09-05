@@ -518,6 +518,9 @@ body {
 .fld.inline { flex-direction: row; align-items: center; gap: 10px; }
 .fld-label { font-size: 13.5px; font-weight: 600; color: var(--text2); }
 .fld-label i { color: var(--danger); font-style: normal; }
+/* 字段标题行（标签 + 右侧行内操作，如 时段 ＋添加） */
+.fld-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.fld-head .mini-btn { flex: none; }
 .fld-suffix { font-size: 14px; color: var(--text2); white-space: nowrap; }
 .fld-help { font-size: 13.5px; color: var(--text2); margin: -4px 0 2px; }
 .fld-empty { color: var(--text2); padding: 12px 0; text-align: center; }

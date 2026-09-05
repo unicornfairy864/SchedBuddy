@@ -478,7 +478,10 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
 
           {/* 时段列表 */}
           <div className="fld">
-            <span className="fld-label">时段（可多条）</span>
+            <div className="fld-head">
+              <span className="fld-label">时段（可多条）</span>
+              <button type="button" className="mini-btn add" onClick={addRow}>＋ 添加时段</button>
+            </div>
             <div className="seg-list">
               {rowProps(f.kind).map((r, i) => (
                 <div className="seg-row" key={i}>
@@ -506,7 +509,6 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
                 </div>
               ))}
             </div>
-            <button type="button" className="mini-btn add" onClick={addRow}>＋ 添加时段</button>
           </div>
 
           {/* 红/黄 提醒（显示在「高级」之前；仅提示，不阻止保存） */}
