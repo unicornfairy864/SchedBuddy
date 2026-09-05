@@ -12,6 +12,7 @@
 - 需求与已确认决策：`app/docs/00-decisions.md`
 - 架构：`app/docs/01-architecture.md` ｜ 数据模型与规则引擎：`app/docs/02-data-model.md`
 - UI 规范：`app/docs/03-ui-spec.md` ｜ API：`app/docs/04-api.md` ｜ 版本规范：`app/docs/05-versioning.md`
+- 开发规范：`app/docs/06-dev-conventions.md` ｜ 文档规范：`app/docs/07-doc-standards.md` ｜ 术语表：`app/docs/08-glossary.md`
 
 ## 仓库约定（用户规定）
 

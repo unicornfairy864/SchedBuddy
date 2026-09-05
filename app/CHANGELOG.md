@@ -2,6 +2,15 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.21] - 2026-09-04
+
+### Docs（文档详细化 + 规范）
+- 新增 `app/docs/06-dev-conventions.md`（开发规范：脚本/目录依赖/TS命名/React/CSS/Conventional Commits/测试/安全/环境变量）。
+- 新增 `app/docs/07-doc-standards.md`（文档规范：体系结构、元信息模板、状态标签、撰写与更新流程）。
+- 新增 `app/docs/08-glossary.md`（术语表）。
+- 全部既有文档（`docs/项目说明.md` 与 `app/docs/00–05`）补“状态/最近更新”元信息。
+- 详细化：`04-api.md` 增加请求/响应示例与错误码表（并统一环境变量为 `SCHEDBUDDY_*`）；`02-data-model.md` 增加完整 JSON 示例；`00-decisions.md` 增加决策日志（ADR-lite，含作废记录）；`docs/项目说明.md` 增加“文档体系索引”与规定第 12/13 条（遵循开发/文档规范）。
+
 ## [0.2.20] - 2026-09-04
 
 ### Changed

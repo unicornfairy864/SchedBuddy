@@ -1,6 +1,6 @@
 {
   "name": "@schedbuddy/server",
-  "version": "0.2.20",
+  "version": "0.2.21",
   "private": true,
   "description": "后端：Express + SQLite(better-sqlite3)，提供 API 与静态站点；可被 Electron 主进程内嵌，也可独立运行。",
   "main": "dist/index.cjs",

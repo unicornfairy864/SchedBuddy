@@ -1,5 +1,7 @@
 # 02 · 数据模型与规则引擎
 
+> 状态：生效　·　最近更新：v0.2.21（2026-09-04）　·　规范：`07-doc-standards.md`
+
 ## 1. 概念模型
 
 ```
@@ -91,3 +93,24 @@ Conflict = { date, a:{title,type,start,end}, b:{title,type,start,end} }。
 - `shared/src/engine.ts`：expand / detectConflicts / lanePack（返回每排块布局，供渲染层绝对定位）。
 - `shared/src/time.ts`：minute↔HH:mm、YYYY-MM-DD 工具、周序号计算（ISO 风格，周一为一周首日）。
 - 校验函数 `validateSchedule()` 在 shared，服务端保存与前端表单共用。
+
+## 7. 完整 JSON 示例（与 API 数据一致）
+
+固定主课（weekly，单双周锚点为空则回退设置项 termStart）：
+
+```json
+{
+  "id": "d5f4…（UUID）", "title": "高等数学", "notes": "A 教 301",
+  "type": "fixed", "color": "#E4574E",
+  "rule": { "kind": "weekly", "weekStart": null, "oddEven": "none",
+            "segments": [ { "weekday": 1, "startMin": 480, "endMin": 570 },
+                          { "weekday": 3, "startMin": 600, "endMin": 690 } ] },
+  "activeFrom": null, "activeTo": null,
+  "overrides": [], "createdAt": "2026-09-04T…", "updatedAt": "2026-09-04T…"
+}
+```
+
+社团（单周）：`rule = { kind:'weekly', weekStart:'2026-08-31', oddEven:'odd', segments:[{weekday:2,startMin:1080,endMin:1200}] }`；
+隔 N 天：`rule = { kind:'interval', startDate:'2026-09-01', everyNDays:2, times:[{startMin:390,endMin:420}] }`；
+一次性：`rule = { kind:'once', date:'2026-09-12', times:[{startMin:540,endMin:660}] }`。
+单次例外示例：`overrides:[{date:'2026-09-08',action:'skip'},{date:'2026-09-15',action:'move',toDate:'2026-09-17'}]`。

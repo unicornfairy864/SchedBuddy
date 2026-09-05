@@ -1,5 +1,7 @@
 # 04 · API 约定
 
+> 状态：生效　·　最近更新：v0.2.21（2026-09-04）　·　规范：`07-doc-standards.md`
+
 Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟或 `HH:mm`（见各接口）。错误统一 `{ error: string, details?: unknown }`。
 
 ## 访问控制（写保护）
@@ -31,6 +33,54 @@ Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟�
 - 自动备份：服务启动时若距上次备份 ≥ 24h，复制 `schedbuddy.db` → `backups/schedbuddy-<ts>.db`，最多保留 14 份（可配置）。
 - 前端静态文件目录：`web/dist`（不存在时仅 API 可用，便于前后端并行开发）。
 
-## 端口与冲突
+## 端口与配置
 
-默认 `3876`；环境变量 `PORT`（server 独立运行）与桌面设置共用；与常见 3000/5173/3080 不冲突。
+默认 `3876`；环境变量唯一来源为 `SCHEDBUDDY_PORT`（另有 `SCHEDBUDDY_DATA`、`SCHEDBUDDY_WEB`，见 `06-dev-conventions.md` §9）；与常见 3000/5173/3080 不冲突。
+
+## 请求/响应示例
+
+创建固定日程（每周一 08:00–09:30）：
+
+```jsonc
+POST /api/schedules
+{
+  "title": "高等数学", "notes": "A 教 301", "type": "fixed", "color": "#E4574E",
+  "rule": { "kind": "weekly", "weekStart": null, "oddEven": "none",
+            "segments": [{ "weekday": 1, "startMin": 480, "endMin": 570 }] },
+  "overrides": [], "activeFrom": null, "activeTo": null
+}
+// 201
+{ "schedule": { "id": "…uuid…", "title": "高等数学", /* …同上… */ },
+  "conflicts": { "errors": [], "warnings": [] } }
+```
+
+与现有固定课重叠（409）：
+
+```jsonc
+POST /api/schedules   // fixed × fixed 重叠且未 force
+→ 409 { "error": "conflict",
+        "conflicts": { "errors": [ { "date": "2026-09-07", "total": 1,
+             "a": { "scheduleId": "…", "title": "线代", "type": "fixed", "startMin": 510, "endMin": 570 },
+             "b": { "scheduleId": "…", "title": "高等数学", "type": "fixed", "startMin": 480, "endMin": 570 } } ],
+                       "warnings": [] },
+        "message": "存在硬性冲突（固定×固定或自身重叠）" }
+```
+
+查询某周展开结果：
+
+```jsonc
+GET /api/occurrences?from=2026-08-31&to=2026-09-06
+→ { "from": "…", "to": "…",
+    "occurrences": [ { "scheduleId": "…", "title": "高等数学", "type": "fixed", "color": "#E4574E",
+                       "date": "2026-08-31", "startMin": 480, "endMin": 570 }, /* … */ ] }
+```
+
+## 错误码速查
+
+| error | HTTP | 含义/处理 |
+| --- | --- | --- |
+| `invalid` | 400 | 校验失败，附带 `issues[]` |
+| `conflict` | 409 | 硬冲突（fixed×fixed 或自身重叠）；前端列出并提示强制保存（`force:true`） |
+| `readonly` | 403 | 局域网客户端写入被拒 |
+| `notfound` | 404 | id 不存在（PUT/DELETE） |
+| `internal` | 500 | 服务端异常（记 `[api-error]` 日志） |
