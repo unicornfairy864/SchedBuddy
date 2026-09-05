@@ -525,7 +525,7 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
             <div className={`adv-body${advOpen ? ' open' : ''}`}>
               <div className="adv-inner">
                 {f.kind === 'weekly' && (
-                  <>
+                  <div className="adv-block">
                     <div className="fld inline">
                       <span className="fld-label">单双周</span>
                       <Dropdown
@@ -546,36 +546,38 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
                           onChange={(v) => patchWeekly({ weekStart: v })} />
                       </label>
                     )}
-                  </>
+                  </div>
                 )}
-                <div className="fld">
-                  <label className="fld-check">
-                    <input type="checkbox" checked={rangeOn}
-                      onChange={(e) => {
-                        const on = e.target.checked;
-                        setRangeOn(on);
-                        if (!on) set({ activeFrom: '', activeTo: '' });
-                      }} />
-                    <span>启用生效范围</span>
-                  </label>
-                  {rangeOn && (
-                    <>
-                      <div className="range-pair">
-                        <DateField value={f.activeFrom} ariaLabel="生效起始" defaultDate={initial.prefill?.date}
-                          onChange={(v) => set({ activeFrom: v })}
-                          onDayDone={focusToYear} />
-                        <i className="dash">至</i>
-                        <span ref={activeToWrap}>
-                          <DateField value={f.activeTo} ariaLabel="生效结束"
-                            onChange={(v) => set({ activeTo: v })} />
-                        </span>
-                        {(f.activeFrom || f.activeTo) && (
-                          <button type="button" className="mini-btn" onClick={() => set({ activeFrom: '', activeTo: '' })}>清除</button>
-                        )}
-                      </div>
-                      {f.activeFrom && f.activeTo && f.activeFrom > f.activeTo && <div className="fld-err">起止颠倒</div>}
-                    </>
-                  )}
+                <div className="adv-block">
+                  <div className="fld">
+                    <label className="fld-check">
+                      <input type="checkbox" checked={rangeOn}
+                        onChange={(e) => {
+                          const on = e.target.checked;
+                          setRangeOn(on);
+                          if (!on) set({ activeFrom: '', activeTo: '' });
+                        }} />
+                      <span>启用生效范围</span>
+                    </label>
+                    {rangeOn && (
+                      <>
+                        <div className="range-pair">
+                          <DateField value={f.activeFrom} ariaLabel="生效起始" defaultDate={initial.prefill?.date}
+                            onChange={(v) => set({ activeFrom: v })}
+                            onDayDone={focusToYear} />
+                          <i className="dash">至</i>
+                          <span ref={activeToWrap}>
+                            <DateField value={f.activeTo} ariaLabel="生效结束"
+                              onChange={(v) => set({ activeTo: v })} />
+                          </span>
+                          {(f.activeFrom || f.activeTo) && (
+                            <button type="button" className="mini-btn" onClick={() => set({ activeFrom: '', activeTo: '' })}>清除</button>
+                          )}
+                        </div>
+                        {f.activeFrom && f.activeTo && f.activeFrom > f.activeTo && <div className="fld-err">起止颠倒</div>}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

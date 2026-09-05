@@ -498,6 +498,12 @@ body {
   padding: 16px 20px 8px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 14px;
 }
+/* 分割线：弹窗内每块（名称/类型/颜色/重复规则/规则明细/时段/高级/备注…）之间 */
+.modal-body > * { border-top: 1px solid #edf1f6; padding-top: 13px; }
+.modal-body > :first-child { border-top: 0; padding-top: 0; }
+.adv-block { display: flex; flex-direction: column; gap: 12px; }
+/* 高级内部分块（单双周 / 生效范围）之间的细分线 */
+.adv-inner .adv-block + .adv-block { border-top: 1px dashed #e2e9ef; padding-top: 12px; }
 .modal-foot {
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; padding: 12px 20px 16px;
