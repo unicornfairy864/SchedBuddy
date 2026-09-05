@@ -175,8 +175,6 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   const [f, setF] = useState<FormState>(() => initForm(initial));
   const [busy, setBusy] = useState(false);
   const [issueRows, setIssueRows] = useState<string[]>([]);
-  const [forceChk, setForceChk] = useState(false);
-  const [warnArmed, setWarnArmed] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [serverIssues, setServerIssues] = useState<string[]>([]);
   /** 生效范围启用开关（勾选后才显示起止日期；关闭即清空范围） */
@@ -223,7 +221,6 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   useEffect(() => {
     setIssueRows([]);
     setServerIssues([]);
-    setWarnArmed(false);
   }, [f.title, f.notes, f.type, f.color, f.kind, f.activeFrom, f.activeTo, f.weekly, f.interval, f.once]);
 
   /* ----- 构建候选（供校验与冲突预检） ----- */
@@ -312,16 +309,17 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   const errRows = issues;
   const hard = conflicts.errors;
   const soft = conflicts.warnings;
-  const status: 'error' | 'warn' | 'clean' = hard.length ? 'error' : soft.length ? 'warn' : 'clean';
 
-  const canSave = errRows.length === 0 && (status !== 'error' || forceChk) && (status !== 'warn' || warnArmed) && (serverIssues.length === 0 || forceChk) && !busy;
+  // 校验问题仍阻止保存；红/黄冲突与提醒不再禁用保存按钮
+  const canSave = errRows.length === 0 && !busy;
 
   /* ----- 保存 ----- */
   const save = async () => {
     const { draft } = buildDraft;
     setBusy(true);
     try {
-      const needForce = forceChk && (status === 'error' || serverIssues.length > 0);
+      // 存在硬冲突（本地预检或服务端驳回）→ 保存时自动携带 force（允许重叠）
+      const needForce = hard.length > 0 || serverIssues.length > 0;
       const payload: ScheduleDraft = { ...draft, force: needForce };
       const res = editing ? await updateSchedule(editing.id, payload) : await createSchedule(payload);
       const warns = res.conflicts.warnings.length;
@@ -511,6 +509,35 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
             <button type="button" className="mini-btn add" onClick={addRow}>＋ 添加时段</button>
           </div>
 
+          {/* 红/黄 提醒（显示在「高级」之前；仅提示，不阻止保存） */}
+          {(errRows.length > 0 || hard.length > 0 || soft.length > 0 || serverIssues.length > 0) && (
+            <div className="alert-stack">
+              {errRows.length > 0 && (
+                <div className="cf-box err">
+                  {errRows.map((s, i) => <div key={i}>⚠ {s}</div>)}
+                </div>
+              )}
+              {hard.length > 0 && (
+                <div className="cf-box err hard">
+                  <div className="cf-title">存在硬冲突（固定×固定或自身重叠）——保存将允许重叠：</div>
+                  {describeConflicts(hard).map((s, i) => <div key={i}>{s}</div>)}
+                </div>
+              )}
+              {soft.length > 0 && (
+                <div className="cf-box warn">
+                  <div className="cf-title">以下重叠为警告（如可翘的水课与主课），不影响保存：</div>
+                  {describeConflicts(soft).map((s, i) => <div key={i}>{s}</div>)}
+                </div>
+              )}
+              {serverIssues.length > 0 && (
+                <div className="cf-box err hard">
+                  <div className="cf-title">服务端判定：</div>
+                  {serverIssues.map((s, i) => <div key={i}>{s}</div>)}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 高级（可折叠）：单双周 + 生效范围，默认收起 */}
           <div className="adv">
             <button
@@ -592,52 +619,6 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
 
           {editing && editing.overrides.length > 0 && (
             <div className="override-note">此日程含 {editing.overrides.length} 条单次例外（跳过/改期/改时），编辑保存后保留。</div>
-          )}
-
-          {/* 校验问题 */}
-          {errRows.length > 0 && (
-            <div className="cf-box err">
-              {errRows.map((s, i) => <div key={i}>⚠ {s}</div>)}
-            </div>
-          )}
-
-          {/* 硬冲突（errors） */}
-          {status === 'error' && (
-            <div className="cf-box err hard">
-              <div className="cf-title">存在硬冲突（固定×固定或自身重叠），默认不允许保存：</div>
-              {describeConflicts(hard).map((s, i) => <div key={i}>{s}</div>)}
-              <label className="force-chk">
-                <input type="checkbox" checked={forceChk} onChange={(e) => setForceChk(e.target.checked)} />
-                强制保存（会与既有日程重叠）
-              </label>
-            </div>
-          )}
-
-          {/* 警告（warnings） */}
-          {status === 'warn' && (
-            <div className="cf-box warn">
-              <div className="cf-title">以下重叠为警告（如可翘的水课与主课），可决定是否仍要保存：</div>
-              {describeConflicts(soft).map((s, i) => <div key={i}>{s}</div>)}
-              {!warnArmed ? (
-                <button type="button" className="mini-btn warn-btn" onClick={() => setWarnArmed(true)}>仍要保存</button>
-              ) : (
-                <div className="cf-armed">已确认「仍要保存」，点下方保存完成</div>
-              )}
-            </div>
-          )}
-
-          {/* 服务端驳回（409 摘要） */}
-          {serverIssues.length > 0 && (
-            <div className="cf-box err hard">
-              <div className="cf-title">服务端判定存在硬冲突：</div>
-              {serverIssues.map((s, i) => <div key={i}>{s}</div>)}
-              {status !== 'error' && (
-                <label className="force-chk">
-                  <input type="checkbox" checked={forceChk} onChange={(e) => setForceChk(e.target.checked)} />
-                  强制保存（重试）
-                </label>
-              )}
-            </div>
           )}
         </div>
 
