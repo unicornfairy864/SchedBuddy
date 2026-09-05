@@ -1,15 +1,17 @@
 # 04 · API 约定
 
-> 状态：生效　·　最近更新：v0.2.21（2026-09-04）　·　规范：`07-doc-standards.md`
+> 状态：生效　·　最近更新：v0.2.28（2026-09-05）　·　规范：`07-doc-standards.md`
 
 Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟或 `HH:mm`（见各接口）。错误统一 `{ error: string, details?: unknown }`。
 
 ## 访问控制（写保护）
 
-- 服务绑定 `0.0.0.0`。对写请求（POST/PUT/DELETE）检查 socket 远端地址：
-  - `127.0.0.1` / `::1`（回环）→ 允许（桌面本机）；
-  - 其余（LAN）→ `403 { error: "readonly" }`。
+**现状**：服务绑定 `0.0.0.0`。对写请求（POST/PUT/DELETE）检查 socket 远端地址：
+- `127.0.0.1` / `::1`（回环）→ 允许（桌面本机）；
+- 其余（LAN）→ `403 { error: "readonly" }`。
 - GET 一律放行。
+
+**规划（v0.4 起，随 App 引入）**：写判定改为 **回环地址** 或 **携带有效设备 token**（`Authorization: Bearer <token>`，经 `/api/pair` PIN 一次性配对换发）；未配对 LAN 客户端（含手机浏览器）仍 403 只读。详见 §规划扩展接口。
 
 ## 接口
 
@@ -26,6 +28,21 @@ Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟�
 | POST | `/api/import` | 导入（覆盖式，需 force 确认） |
 
 服务端保存流程：`validateSchedule`（shared）→ 冲突检测 `detectConflicts`（shared，窗口 = 该日程可能影响范围，缺省 ±1 年）→ 策略判定 → 写库。
+
+> **规划（v0.3 起）**：DELETE 由物理删除改为**软删**（置 `deleted_at` 墓碑），删除作为同步变更双向传播；写路径维护 `rev`/`last_writer`（见 `02-data-model.md` §8）。
+
+## 规划扩展接口（已决策 · v0.4–0.5 实现；当前代码未含）
+
+面向 Android App 的移动写端接口。Base 同 `/api`；除 `meta` 外 GET 放行，写类均校验 token。
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/pair` | PIN 一次性配对：`body { pin }` → `201 { deviceId, token }`（token 长期有效，可撤销）；PIN 由主机端生成（单次、短时效） |
+| GET | `/api/sync/pull?since=<rev>` | 增量拉取：`since` = 客户端上次同步到的 rev（首次省略 = 全量）。返回 `{ upto, schedules:[…], settings:[…], tombstones:[{id, deletedAt}] }`，仅含 `rev > since` 的变更 |
+| POST | `/api/sync/push` | 增量推送：`body { deviceId, baseRev, changes:[…] }`，每条 change = 完整 Schedule（或墓碑 `{id, deleted:true}`）。无冲突 → 逐条落库、rev 递增，返回 `{ accepted:[{id, rev}], upto }`；存在冲突 → 冲突记录**不落库**，返回 `{ conflicts:[{ id, serverVersion, clientVersion }] }`，客户端进入人工 merge |
+| POST | `/api/sync/merge` | 冲突裁决结果上传：`body { deviceId, decisions:[{ id, resolution:'server'|'client'|{ mergedSchedule } }] }` → 落库并递增 rev（`'server'` 表示弃用本机版、无写入） |
+
+错误：token 缺失/无效 → `401 { error:'unauthorized' }`；PIN 错误/过期 → `403 { error:'badpin' }`；`baseRev` 落后（期间主机已前移）→ `409 { error:'conflict', baseRev, currentRev }` 需重拉再推。
 
 ## 数据目录与备份
 
@@ -80,7 +97,9 @@ GET /api/occurrences?from=2026-08-31&to=2026-09-06
 | error | HTTP | 含义/处理 |
 | --- | --- | --- |
 | `invalid` | 400 | 校验失败，附带 `issues[]` |
-| `conflict` | 409 | 硬冲突（fixed×fixed 或自身重叠）；前端列出并提示强制保存（`force:true`） |
-| `readonly` | 403 | 局域网客户端写入被拒 |
+| `conflict` | 409 | 硬冲突（fixed×fixed 或自身重叠）；前端列出并提示强制保存（`force:true`）。规划：sync push 的 rev 落后亦 409 |
+| `readonly` | 403 | 未授权客户端写入被拒（现状 = 全部 LAN；规划 = 未配对 LAN） |
+| `unauthorized` | 401 | （规划 v0.4）写请求缺 token 或 token 无效 |
+| `badpin` | 403 | （规划 v0.4）配对 PIN 错误/过期 |
 | `notfound` | 404 | id 不存在（PUT/DELETE） |
 | `internal` | 500 | 服务端异常（记 `[api-error]` 日志） |

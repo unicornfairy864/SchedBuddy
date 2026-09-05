@@ -2,6 +2,16 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.28] - 2026-09-05
+
+### Docs（规划决策轮：新增 Android 移动写端 + 离线手动同步体系，代码未动）
+
+- **形态决策**（ADR，见 `00-decisions.md` §5）：双端架构扩展为三端 —— PC 权威主机（常驻 Express + SQLite）+ 局域网只读 Web + **Android App 移动写端**；App 采用 **React Native + TypeScript** 直接复用 `shared` 引擎与布局计算；仅局域网同步、不做公网。
+- **同步模型**：离线优先（App 内置库 = 离线工作区）+ **用户手动 pull / push / merge**（冲突逐条裁决）；记录级引入 `rev`（单调同步序号）、软删墓碑 `deleted_at`、`last_writer`；物理 DELETE 改软删（v0.3 起落库）；`settings` 一并参与同步。
+- **写端授权**：写判定 = 回环 或 **PIN 一次性配对换发的设备 token**；未配对 LAN 仍 403 只读（v0.4 实现）。
+- **路线重排**：v0.3 编辑核心（含同步字段落库）→ v0.4 RN App 骨架（局域网直连 + PIN 配对）→ v0.5 离线工作区 + 手动同步 + 合并 UI；原 v0.4 **Electron 桌面壳顺延**，打包仍搁置。
+- 受影响文档同步更新：`00-decisions.md`（基线行 1/4/8–12 + ADR）、`01-architecture.md`（§1.1 规划拓扑、目录、§5 里程碑）、`02-data-model.md`（§8 同步扩展与迁移 v3、overrides 口径修正 move）、`04-api.md`（写保护现状/规划、规划 `/pair`·`/sync/pull`·`/sync/push`·`/sync/merge` 与错误码）、`08-glossary.md`（同步/配对/墓碑等术语）、`项目说明.md`（§一 形态与技术栈、§三 路线表）、`README.md`（路线说明）。
+
 ## [0.2.27] - 2026-09-05
 
 ### Changed（验收项 3；第 4 项「日常/周常区分」经用户确认取消）

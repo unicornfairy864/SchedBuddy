@@ -40,4 +40,4 @@ npm test             # 规则引擎自测
 
 - 数据自动存入 `app/data/schedbuddy.db`（不入库，含自动备份）。
 - 开发模式：`npm run dev:server`（服务热更）+ 新终端 `npm run dev:web`（Vite 5173 代理 /api）。
-- 桌面 Electron 壳属 v0.4 里程碑，接入前依赖会另行确认。
+- **路线规划（v0.3 起，详见 `app/docs/00-decisions.md` §5 与 `app/docs/01-architecture.md` §5）**：v0.3 = PC/Web 编辑核心（含同步字段落库）；v0.4 = Android App（React Native）骨架（局域网直连 + PIN 配对）；v0.5 = App 离线工作区 + 手动 pull/push/merge 同步。Electron 桌面壳（原 v0.4）**顺延**，打包/安装程序仍按用户要求搁置。

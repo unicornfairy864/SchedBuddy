@@ -1,6 +1,6 @@
 # 02 · 数据模型与规则引擎
 
-> 状态：生效　·　最近更新：v0.2.21（2026-09-04）　·　规范：`07-doc-standards.md`
+> 状态：生效　·　最近更新：v0.2.28（2026-09-05）　·　规范：`07-doc-standards.md`
 
 ## 1. 概念模型
 
@@ -14,7 +14,7 @@ Schedule（一个条目）
 │     once   → [{ date:'YYYY-MM-DD', startMin, endMin }]
 │     interval → [{ startMin, endMin }]                (每次发生都套用)
 ├─ activeFrom?/activeTo?  'YYYY-MM-DD'                 ← 生效日期范围
-└─ overrides[]  { date, action:'skip'|'reschedule'|'retime', targetDate?, startMin?, endMin? }
+└─ overrides[]  { date, action:'skip'|'move'|'retime', toDate?, startMin?, endMin? }
 ```
 
 - `startMin/endMin` = 当日分钟数（0–1439，endMin > startMin），展示层换算成 HH:mm。
@@ -59,7 +59,7 @@ Occurrence = { scheduleId, date, startMin, endMin }
 2. **interval**：日期 = `startDate + k × everyNDays`（k≥0）落在窗口内，每次取 rule 的时段窗口。
 3. **once**：日期 = `date` 在窗口内。
 4. 过滤：`date < activeFrom || date > activeTo` 丢弃。
-5. 应用 overrides：命中日期 `skip` → 丢弃该日全部段；`reschedule` → 原日期丢弃、在 `targetDate` 增加；`retime` → 当日替换时间。
+5. 应用 overrides：命中日期 `skip` → 丢弃该日全部段；`move` → 原日期丢弃、在 `toDate` 增加；`retime` → 当日替换为 startMin/endMin。
 6. 输出升序 Occurrence 列表（用于渲染与冲突判定，不落库——规则修改即时生效）。
 
 边界：跨午夜时长不允许（endMin ≤ 1439）；重叠校验按半开区间 `[start,end)`。
@@ -114,3 +114,33 @@ Conflict = { date, a:{title,type,start,end}, b:{title,type,start,end} }。
 隔 N 天：`rule = { kind:'interval', startDate:'2026-09-01', everyNDays:2, times:[{startMin:390,endMin:420}] }`；
 一次性：`rule = { kind:'once', date:'2026-09-12', times:[{startMin:540,endMin:660}] }`。
 单次例外示例：`overrides:[{date:'2026-09-08',action:'skip'},{date:'2026-09-15',action:'move',toDate:'2026-09-17'}]`。
+
+## 8. 同步扩展（已决策 · 规划；v0.3 起落库，当前代码未含）
+
+场景与方案详见 `00-decisions.md` §1 行 8–12 与 `01-architecture.md` §1.1：PC 主机为**权威库**；
+Android App 内置库为**离线工作区**；用户在局域网内**手动 pull/push/merge**。为此需要：
+
+### 8.1 server `schedules` 表新增列（迁移 v3，随 v0.3 编辑功能落地）
+
+```sql
+ALTER TABLE schedules ADD COLUMN rev          INTEGER NOT NULL DEFAULT 0; -- 单调同步序号
+ALTER TABLE schedules ADD COLUMN deleted_at   TEXT;                        -- 软删墓碑（NULL=在册）
+ALTER TABLE schedules ADD COLUMN last_writer  TEXT NOT NULL DEFAULT 'pc';  -- 最后修改设备 id
+```
+
+- **rev**：主机侧每次写 +1（含移动端经 push 落库的写），作为 pull/push 的单调水印（不依赖 `updatedAt` 字符串比较，规避时钟偏移/同毫秒碰撞）。
+- **软删**：v0.3 起写路径的 DELETE 只置 `deleted_at`（墓碑），物理删除不做（导出/迁移时可整体剔除）。删除作为一条“变更”双向传播，避免“一端删除、另一端同步后复活”。
+- **last_writer**：记录最后写入设备（本机 = `'pc'`，App = 其 deviceId），merge 展示归属。
+
+`settings` 表以 `key` 为记录单位参与同步（同样具备 rev/墓碑/last_writer 语义；当前仅 termStart 等少数键，冲突概率极低）。
+
+### 8.2 App 内置库（规划 v0.4–0.5）
+
+- 镜像表：`schedules` / `settings`（列同 server，含 rev/deleted_at/last_writer）；
+- 同步元数据表：`sync_meta(host, device_id, token, last_pull_rev, last_push_rev, last_sync_at)`；
+- **离线写队列**：新建/修改/删除先落本地镜像并标记待推送（pending）；用户点“推送”时批量上传；成功后按返回的新 rev 更新本地。
+- 渲染与 Web 一致：展开/冲突/排布全部调用 `shared` 纯函数，本地库只存 Schedule 记录，不落 Occurrence。
+
+### 8.3 冲突判定（push 阶段，主机裁决）
+
+同一记录 `id`：主机发现“本地自 `baseRev` 以来已变化”且“客户端也自其 `last_push_rev` 以来改过” → 不落库，返回冲突清单（主机版 + 客户端版 + last_writer）；客户端进入**合并列表**由用户逐条裁决（保留主机版 / 保留本机版 / 手动编辑合并），裁决结果以新版本重推收敛。
