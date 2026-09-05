@@ -2,6 +2,15 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.1] - 2026-09-05
+
+### Added（桌面壳代码与打包配置 · 未构建验证，待装依赖）
+- 按用户指令尝试打包，先落代码/配置（**未安装依赖、未构建验证**）：
+  - `desktop/src/main.ts`：Electron 主进程 = 单实例，内嵌 `startServer` 启动后端 → 打开本机窗口（数据写入用户数据目录；LAN 仍只读）；
+  - `electron-builder.yml`：win-unpacked 目录产物（`npm run dist:dir`），asar + better-sqlite3 解包；
+  - 根脚本：`build:desktop` / `desktop`（开发运行）/ `dist:dir`。
+- 安装命令将由用户确认后执行（electron / electron-builder / @electron/rebuild）。
+
 ## [0.3.0] - 2026-09-05
 
 ### Released（里程碑 v0.3：PC/Web 编辑核心定版）

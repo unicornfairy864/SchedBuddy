@@ -1,0 +1,24 @@
+# SchedBuddy 桌面打包（electron-builder）
+# 从仓库 app/ 目录执行：npx electron-builder --dir --win -c electron-builder.yml
+appId: local.schedbuddy.desktop
+productName: SchedBuddy
+directories:
+  output: desktop/release
+files:
+  - desktop/dist/**
+  - server/dist/**
+  - web/dist/**
+  - "!**/*.map"
+asar: true
+# 原生模块（better-sqlite3）从 asar 解包，Electron 运行时自动重定向加载
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**"
+npmRebuild: true
+win:
+  target:
+    - target: dir            # win-unpacked 目录（直接运行 SchedBuddy.exe，可自行压 RAR）
+      arch:
+        - x64
+electronLanguages:
+  - zh-CN
+  - en-US
