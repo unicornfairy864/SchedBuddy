@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.40] - 2026-09-05
+
+### Fixed（Dropdown 列表错位）
+- 弹层由 `position:fixed` 视口锚定改为**绝对定位锚在触发按钮正下方**（与按钮同左同宽起点），消除弹窗遮罩 `backdrop-filter` 造成的坐标参考系偏移；随弹窗内容滚动不裁剪，无需视口换算。
+
 ## [0.2.39] - 2026-09-05
 
 ### Fixed（第 1 步回炉：单双周下拉改为自绘组件）
