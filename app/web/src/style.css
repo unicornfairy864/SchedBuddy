@@ -458,7 +458,7 @@ body {
   animation: fade .15s ease both;
 }
 .modal {
-  width: min(560px, 100%);
+  width: min(700px, 100%);
   max-height: calc(100vh - 48px);
   display: flex; flex-direction: column;
   background: var(--surface); border-radius: 16px;

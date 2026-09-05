@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.31] - 2026-09-05
+
+### Changed（编辑弹窗宽度）
+- 新建/编辑日程弹窗宽度 `560px → 700px`（`style.css .modal`；窄设置框 `.modal.narrow` 保持 430px 不变），字段区更舒展。
+
 ## [0.2.30] - 2026-09-05
 
 ### Added（v0.3 编辑 UI 起步 · 弹窗表单与冲突交互，对应 `03-ui-spec.md` §3–5）
