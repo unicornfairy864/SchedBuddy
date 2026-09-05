@@ -756,9 +756,10 @@ body {
 /* 时段列表 */
 .seg-list { display: flex; flex-direction: column; gap: 8px; }
 .seg-row { display: flex; gap: 8px; align-items: center; }
-.seg-row select { flex: none; }
+/* 星期下拉与（隔N天/一次性）占位列同宽，保证时段始终从同一左侧位置开始 */
+.seg-row select { flex: none; width: 104px; }
+.seg-row-spacer { flex: none; width: 104px; display: block; }
 .seg-row .dash { color: var(--text2); font-style: normal; }
-.seg-row-spacer { flex: 1 1 auto; min-width: 96px; display: block; }
 .seg-row .rm { padding: 6px 9px; font-size: 13px; }
 .seg-row .rm:disabled { opacity: .35; cursor: default; }
 
