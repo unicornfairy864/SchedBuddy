@@ -178,6 +178,8 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   const [warnArmed, setWarnArmed] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [serverIssues, setServerIssues] = useState<string[]>([]);
+  /** 生效范围启用开关（勾选后才显示起止日期；关闭即清空范围） */
+  const [rangeOn, setRangeOn] = useState(() => Boolean(initial.schedule?.activeFrom || initial.schedule?.activeTo));
 
   const editing = initial.schedule;
   const set = (patch: Partial<FormState>) => setF((prev) => ({ ...prev, ...patch }));
@@ -459,7 +461,7 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
             <div className="rule-sub">
               <label className="fld inline">
                 <span className="fld-label">起始日期</span>
-                <DateField value={f.interval.startDate} ariaLabel="起始日期"
+                <DateField value={f.interval.startDate} ariaLabel="起始日期" defaultDate={initial.prefill?.date}
                   onChange={(v) => patchInterval({ startDate: v })} />
               </label>
               <label className="fld inline">
@@ -474,7 +476,7 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
             <div className="rule-sub">
               <label className="fld inline">
                 <span className="fld-label">日期</span>
-                <DateField value={f.once.date} ariaLabel="日期"
+                <DateField value={f.once.date} ariaLabel="日期" defaultDate={initial.prefill?.date}
                   onChange={(v) => patchOnce({ date: v })} />
               </label>
             </div>
@@ -505,20 +507,32 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
             <button type="button" className="mini-btn add" onClick={addRow}>＋ 添加时段</button>
           </div>
 
-          {/* 生效范围 */}
-          <div className="rule-sub">
-            <span className="fld-label">生效范围（可选）</span>
-            <div className="range-pair">
-              <DateField value={f.activeFrom} ariaLabel="生效起始"
-                onChange={(v) => set({ activeFrom: v })} />
-              <i className="dash">至</i>
-              <DateField value={f.activeTo} ariaLabel="生效结束"
-                onChange={(v) => set({ activeTo: v })} />
-              {(f.activeFrom || f.activeTo) && (
-                <button type="button" className="mini-btn" onClick={() => set({ activeFrom: '', activeTo: '' })}>清除</button>
-              )}
-            </div>
-            {f.activeFrom && f.activeTo && f.activeFrom > f.activeTo && <div className="fld-err">起止颠倒</div>}
+          {/* 生效范围（复选框启用；勾选后才显示起止日期） */}
+          <div className="fld">
+            <label className="fld-check">
+              <input type="checkbox" checked={rangeOn}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  setRangeOn(on);
+                  if (!on) set({ activeFrom: '', activeTo: '' });
+                }} />
+              <span>启用生效范围</span>
+            </label>
+            {rangeOn && (
+              <>
+                <div className="range-pair">
+                  <DateField value={f.activeFrom} ariaLabel="生效起始"
+                    onChange={(v) => set({ activeFrom: v })} />
+                  <i className="dash">至</i>
+                  <DateField value={f.activeTo} ariaLabel="生效结束"
+                    onChange={(v) => set({ activeTo: v })} />
+                  {(f.activeFrom || f.activeTo) && (
+                    <button type="button" className="mini-btn" onClick={() => set({ activeFrom: '', activeTo: '' })}>清除</button>
+                  )}
+                </div>
+                {f.activeFrom && f.activeTo && f.activeFrom > f.activeTo && <div className="fld-err">起止颠倒</div>}
+              </>
+            )}
           </div>
 
           {/* 备注 */}

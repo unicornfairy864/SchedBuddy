@@ -37,11 +37,14 @@ export default function DateField({
   onChange,
   ariaLabel,
   className = '',
+  defaultDate,
 }: {
   value: string;
   onChange: (v: string) => void;
   ariaLabel?: string;
   className?: string;
+  /** 参考日期（通常＝新建时点选的那天）：部分段为空时自动补齐 */
+  defaultDate?: string;
 }) {
   const [segs, setSegs] = useState<[string, string, string]>(() => splitSegs(value));
   const lastRef = useRef(value);
@@ -68,7 +71,18 @@ export default function DateField({
     next[i] = clean;
     setSegs(next);
     const c = compose(...next);
-    if (c !== null) commit(c); // 完整合法立即生效；部分输入保持草稿
+    if (c !== null) {
+      commit(c); // 完整合法立即生效
+    } else if (clean.length === SEG_MAX[i] && defaultDate) {
+      // 本段刚输满而其它段为空：自动用参考日（所点当天）补齐并提交
+      const [dy, dm, dd] = splitSegs(defaultDate);
+      const filled: [string, string, string] = [next[0] || dy, next[1] || dm, next[2] || dd];
+      const c2 = compose(...filled);
+      if (c2 !== null) {
+        setSegs(filled);
+        commit(c2);
+      }
+    }
     if (clean.length === SEG_MAX[i] && i < 2) refs[i + 1].current?.focus();
   };
 
