@@ -144,17 +144,23 @@ export default function App() {
 
   const nav = (dir: 1 | -1) => setAnchor((a) => (view === 'week' ? addDays(a, dir * 7) : addDays(a, dir)));
 
-  const rangeLabel = useMemo(() => {
+  // 日期范围拆成两段：日期段 + 周次段（窄屏省略时先省日期、必留第N周）
+  const rangeParts = useMemo(() => {
     if (view === 'day') {
       const d = visibleDates[0];
-      const w = meta?.termStart && weekIndexOf(d, meta.termStart) >= 1 ? ` 第${weekIndexOf(d, meta.termStart)}周` : '';
-      return `${d.slice(0, 4)}-${d.slice(5)}${w}`;
+      const idx = meta?.termStart ? weekIndexOf(d, meta.termStart) : -1;
+      return {
+        dates: `${d.slice(0, 4)}-${d.slice(5)}`,
+        week: idx >= 1 ? `第${idx}周` : null,
+      };
     }
     const from = visibleDates[0];
     const to = visibleDates[6];
-    const w =
-      meta?.termStart && weekIndexOf(from, meta.termStart) >= 1 ? ` · 第${weekIndexOf(from, meta.termStart)}周` : '';
-    return `${from.slice(5).replace('-', '/')} – ${to.slice(5).replace('-', '/')}${w}`;
+    const idx = meta?.termStart ? weekIndexOf(from, meta.termStart) : -1;
+    return {
+      dates: `${from.slice(5).replace('-', '/')} – ${to.slice(5).replace('-', '/')}`,
+      week: idx >= 1 ? `第${idx}周` : null,
+    };
   }, [view, visibleDates, meta?.termStart]);
 
   // 悬浮窗：隐藏时先淡出再卸载，保证淡入淡出动画
@@ -174,7 +180,8 @@ export default function App() {
   return (
     <div className="app">
       <Header
-        rangeLabel={rangeLabel}
+        rangeDates={rangeParts.dates}
+        rangeWeek={rangeParts.week}
         view={view}
         readOnly={meta?.readOnly ?? true}
         version={meta?.version ?? '…'}

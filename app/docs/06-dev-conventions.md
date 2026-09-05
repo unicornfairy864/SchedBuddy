@@ -56,7 +56,7 @@ app/
 - 设计令牌集中在 `web/src/style.css` 的 `:root`（`--accent/--lane-h/--ease/--radius/...`），禁止散落魔法值。
 - 类名 BEM-lite：组件前缀 `.sb-`（`sb-block/sb-tip`），修饰 `.t-<type>`、状态 `.ho/.focus/.slim/.in/.out`、布局 `.lane/.band/.ruler`。
 - 动效时长集中在 120–300ms；缓动统一 `var(--ease)`；hover/active/press 必须有反馈。
-- 不用 `!important`；响应式断点档：顶栏 `900px`（紧凑+`⋯` 折叠）/ `720px`（折两行）/ `480px`（尺寸微调）/ `300px`（极窄·品牌仅 Logo）；板面日带内容断点 `860px`（见 `03-ui-spec.md` §7）。
+- 不用 `!important`；响应式断点档：顶栏 `900px`（紧凑+`⋯` 折叠）/ `720px`（折两行）/ `480px`（尺寸微调）/ `430px`（省略日期段、保留第N周）/ `300px`（极窄·品牌仅 Logo）；板面日带内容断点 `860px`（见 `03-ui-spec.md` §7）。
 
 ## 6. Git / 提交规范
 

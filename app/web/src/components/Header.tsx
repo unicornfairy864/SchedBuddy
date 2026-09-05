@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import avatarUrl from '../../../resources/avatar.jpg';
 
 interface Props {
-  rangeLabel: string;
+  rangeDates: string;
+  rangeWeek: string | null;
   view: 'week' | 'day';
   readOnly: boolean;
   version: string;
@@ -16,7 +17,8 @@ interface Props {
 
 /** 顶栏：单行一体 —— 左(品牌+版本徽章+周/日切换) / 中(日期导航) / 右(设置+新建；窄屏折叠进 ⋯ 菜单) */
 export default function Header({
-  rangeLabel,
+  rangeDates,
+  rangeWeek,
   view,
   readOnly,
   version,
@@ -65,7 +67,10 @@ export default function Header({
           <button className="icon-btn" title="上一页" aria-label="上一页" onClick={onPrev}>‹</button>
           <button className="btn today" onClick={onToday}>今天</button>
           <button className="icon-btn" title="下一页" aria-label="下一页" onClick={onNext}>›</button>
-          <span className="range">{rangeLabel}</span>
+          <span className={rangeWeek ? 'range' : 'range no-week'}>
+            <span className="range-dates">{rangeDates}{rangeWeek ? ' · ' : ''}</span>
+            {rangeWeek && <span className="range-week">{rangeWeek}</span>}
+          </span>
         </nav>
       </div>
 

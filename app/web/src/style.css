@@ -62,7 +62,13 @@ body {
 
 .mid { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 16px; }
 .nav { display: flex; align-items: center; gap: 9px; }
-.range { margin-left: 10px; font-weight: 600; font-size: 16px; color: var(--text); white-space: nowrap; }
+.range {
+  margin-left: 10px; font-weight: 600; font-size: 16px; color: var(--text);
+  white-space: nowrap; display: inline-flex; align-items: baseline;
+}
+/* 日期段与周次段分离：窄屏先省略日期段，第N周常驻 */
+.range-dates { display: inline-block; white-space: nowrap; }
+.range-week { display: inline-block; white-space: nowrap; }
 .right { flex: none; display: flex; align-items: center; gap: 12px; }
 
 .seg {
@@ -361,7 +367,8 @@ body {
 /* ===== 响应式断点档（顶栏；板面日带内容断点仍 860，规范见 06 §5 / 03 §7）=====
    ≤900 紧凑单行（右区 ⚙/＋新建 折叠为 ⋯，JS 阈值同）
    ≤720 折两行：第1行 品牌｜周/日+右区（右侧聚拢）；第2行 日期导航整行居中
-   ≤480 极窄：品牌仅 Logo（隐藏 SchedBuddy 与版本号） */
+   ≤430 空间不够：先省略日期段(08/31–09/06)，保留 第N周
+   <300 极窄：品牌仅 Logo（隐藏 SchedBuddy 与版本号） */
 @media (max-width: 900px) {
   .topbar { gap: 10px; padding: 8px 12px; }
   .logo { width: 38px; height: 38px; border-radius: 12px; }
@@ -384,7 +391,8 @@ body {
   .seg { order: 2; margin-left: auto; flex: none; }
   .right { order: 3; }
   .mid { order: 4; flex: 1 1 100%; min-width: 0; justify-content: center; }
-  .range { max-width: 44vw; overflow: hidden; text-overflow: ellipsis; }
+  /* 日期段可被省略号压缩（周次段不受影响） */
+  .range-dates { max-width: 46vw; overflow: hidden; text-overflow: ellipsis; }
 }
 
 @media (max-width: 480px) {
@@ -392,8 +400,15 @@ body {
   .seg button { padding: 5px 12px; font-size: 14px; }
   .nav .icon-btn { padding: 4px 8px; font-size: 16px; }
   .nav .btn { padding: 6px 9px; font-size: 13.5px; }
-  .range { max-width: 34vw; font-size: 13px; }
+  .range { font-size: 13px; }
+  .range-dates { max-width: 30vw; }
   .more-panel { min-width: 156px; }
+}
+
+/* 空间不足：先省略日期段（08/31 – 09/06），保留「第N周」；无周次时日期段回退显示 */
+@media (max-width: 430px) {
+  .range-dates { display: none; }
+  .range.no-week .range-dates { display: inline-block; max-width: 38vw; }
 }
 
 /* 极窄(<300px)：才隐藏 SchedBuddy 与版本号，仅保留品牌 Logo */
