@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.25] - 2026-09-05
+
+### Changed（验收项 1）
+- 品牌文字（SchedBuddy + 版本号）隐藏阈值由 ≤480px 下探至 **<300px**：≥300px 始终保留品牌文字，仅 <300px 显示 Logo。
+
 ## [0.2.24] - 2026-09-05
 
 ### Changed（顶栏移动端适配：A+B 混合 —— 显式档位 + 折行兜底，用户验收「大致可行」）

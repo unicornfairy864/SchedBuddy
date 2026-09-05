@@ -388,13 +388,18 @@ body {
 }
 
 @media (max-width: 480px) {
-  .brand-txt { display: none; } /* 极窄：仅保留 Logo */
   .logo { width: 34px; height: 34px; border-radius: 10px; }
   .seg button { padding: 5px 12px; font-size: 14px; }
   .nav .icon-btn { padding: 4px 8px; font-size: 16px; }
   .nav .btn { padding: 6px 9px; font-size: 13.5px; }
   .range { max-width: 34vw; font-size: 13px; }
   .more-panel { min-width: 156px; }
+}
+
+/* 极窄(<300px)：才隐藏 SchedBuddy 与版本号，仅保留品牌 Logo */
+@media (max-width: 300px) {
+  .brand-txt { display: none; }
+  .logo { width: 30px; height: 30px; border-radius: 9px; }
 }
 
 /* 板面内容断点（日带 gutter 收窄） */
