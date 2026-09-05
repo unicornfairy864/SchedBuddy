@@ -4,7 +4,7 @@
 //   后端始终由「系统 Node（打包时随包携带 node.exe）」作为子进程运行，
 //   Electron 只负责窗口渲染 http://127.0.0.1:PORT —— 因此 better-sqlite3 只编译给系统 Node。
 // 本机 = 唯一写端（回环）；局域网浏览器只读（见 server/src/api.ts writeGuard）。
-import { app, BrowserWindow, dialog } from 'electron';
+import { app, BrowserWindow, dialog, session } from 'electron';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
@@ -75,6 +75,14 @@ async function boot(): Promise<void> {
     });
 
     await waitServerReady(port);
+
+    // 清理历史会话缓存：避免命中旧版本缓存页面（旧 index.html 可能被缓存最长 1h）
+    try {
+      await session.defaultSession.clearCache();
+    } catch {
+      /* 非致命 */
+    }
+
     win = new BrowserWindow({
       width: 1180,
       height: 800,

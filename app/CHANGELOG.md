@@ -2,6 +2,13 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.6] - 2026-09-05
+
+### Fixed（桌面端显示旧页面的缓存问题）
+- 现象：网页版正常而桌面 exe 仍旧（含旧"今天"逻辑界面）。
+- 根因：Express 曾对 `index.html` 也下发 `maxAge:'1h'`，旧版桌面首次启动后把旧 index.html 缓存进 Electron 会话缓存（`%APPDATA%\SchedBuddy`），新版启动命中缓存旧页面。
+- 修复：服务端对 `index.html` 下发 `Cache-Control: no-cache`（带 hash 的资源仍长缓存）；桌面启动先 `session.defaultSession.clearCache()`。
+
 ## [0.3.5] - 2026-09-05
 
 ### Changed（桌面依赖架构：无需 Node/Electron ABI 手动切换）

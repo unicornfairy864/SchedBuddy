@@ -56,9 +56,17 @@ export async function startServer(opts: ServerOptions = {}): Promise<RunningServ
   app.use('/api', makeApi(store));
 
   if (existsSync(join(webDir, 'index.html'))) {
-    app.use(express.static(webDir, { index: 'index.html', maxAge: '1h' }));
+    // index.html 不缓存（避免桌面端/浏览器保留旧页面）；带 hash 的资源继续长缓存
+    app.use(express.static(webDir, {
+      index: 'index.html',
+      maxAge: '1h',
+      setHeaders: (res, path) => {
+        if (path.endsWith('index.html')) res.setHeader('Cache-Control', 'no-cache');
+      },
+    }));
     app.get('*', (req, res, next) => {
       if (req.path.startsWith('/api')) return next();
+      res.setHeader('Cache-Control', 'no-cache');
       res.sendFile(join(webDir, 'index.html'));
     });
   }
