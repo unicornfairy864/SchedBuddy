@@ -14,15 +14,21 @@ export default function BlockTooltip({
   data,
   hidden,
   interactive = false,
+  cap = false,
   onEdit,
   onHide,
+  onTipPointer,
 }: {
   data: TooltipData | null;
   hidden: boolean;
   /** 本机可编辑且该悬浮窗被点击固定：窗内出现「编辑」按钮且可点击 */
   interactive?: boolean;
+  /** 桌面精确指针（hover: hover && pointer: fine）：悬浮窗本体可接收鼠标 */
+  cap?: boolean;
   onEdit?: (scheduleId: string) => void;
   onHide?: () => void;
+  /** 指针移入/移出悬浮窗本体（cap 桌面下） */
+  onTipPointer?: (over: boolean) => void;
 }) {
   // 淡入：先以 opacity:0 挂载并让浏览器绘制一帧，再于下一帧加 .in 触发过渡；
   // 淡出：移除 .in 即可（组件仍挂载 170ms 供动画播放）。
@@ -51,12 +57,23 @@ export default function BlockTooltip({
   const left = !below && x > window.innerWidth - 380;
   const vw = window.innerWidth;
   const clampedX = Math.min(Math.max(x, left ? 340 : 170), vw - 20);
+  // 默认锚在方块顶（顶部贴齐），确保鼠标从方块移入悬浮窗时无“空档”导致中途淡出；
+  // 靠近视口顶部（below）时翻到方块下方，同样与方块区域相接。
+  const anchorY = below ? y + 22 : y;
 
   return (
     <div
-      className={`sb-tip${below ? ' below' : ''}${left ? ' left' : ''}${interactive ? ' act' : ''}${entered && !hidden ? ' in' : ''}`}
-      style={{ top: below ? y + 22 : y - 8, left: clampedX }}
-      onMouseLeave={() => interactive && onHide?.()}
+      className={`sb-tip${cap ? ' cap' : ''}${below ? ' below' : ''}${left ? ' left' : ''}${interactive ? ' act' : ''}${entered && !hidden ? ' in' : ''}`}
+      style={{ top: anchorY, left: clampedX }}
+      onMouseEnter={() => onTipPointer?.(true)}
+      onMouseLeave={(e) => {
+        const rt = e.relatedTarget as Element | null;
+        onTipPointer?.(false);
+        // 移向方块/另一悬浮窗：交由板面 hover 逻辑决定（保留本块或切换到对方块）；
+        // 移向其它区域（含离开窗口）→ 收起。
+        if (rt?.closest?.('.sb-tip, .sb-block')) return;
+        onHide?.();
+      }}
     >
       <div className="tip-head">
         <span className="tip-color" style={{ background: s.color }} />

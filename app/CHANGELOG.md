@@ -2,6 +2,17 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.34] - 2026-09-05
+
+### Changed（桌面悬浮窗可接住鼠标 · 就地现「✎ 编辑」按钮）
+- 桌面端（`hover: hover && pointer: fine`）：鼠标从日程块移入悬浮窗本体时窗口**保持显示**，并现出「✎ 编辑」按钮——可直接在窗内点击编辑，**无需先点击块固定**；移回方块恢复浏览态（无按钮）；移向其它区域 / Esc / 点窗外 → 淡出收起。
+- 悬浮窗锚点由“块顶上方 8px 悬空”改为**贴齐块顶**，消除鼠标从块移向窗的路径空档，避免中途触发淡出。
+- 交互语义：桌面 hover 进窗 = 捕获态（`cap` + 指针进入事件），区别于点击/点按的**固定态**（`pinned`，触摸设备不变：点按块 → 固定 → 窗内「✎ 编辑」）。
+
+### Notes
+- 实现：`BlockTooltip` 新增 `cap`/`onTipPointer`（移入取消待淡出并保持、移向方块豁免收起）；`App` 新增 `hoverCap`/`tipOver` 并用于 `interactive` 门控；`style.css` 新增 `.sb-tip.cap { pointer-events:auto }`。
+- 只读端无编辑按钮；移动端行为未改。同步 `03-ui-spec.md` §2/§3 与 `项目说明.md`。
+
 ## [0.2.33] - 2026-09-05
 
 ### Removed（时间线上直接添加日程入口）

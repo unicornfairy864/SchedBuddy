@@ -311,6 +311,9 @@ body {
 /* 固定态（点方块后）：允许在窗内点「编辑」按钮 */
 .sb-tip.act { pointer-events: auto; }
 .sb-tip.act { cursor: default; }
+/* 桌面精确指针（hover: hover && pointer: fine）：悬浮窗本体可接收鼠标——
+   鼠标从方块移入窗内时窗口保持显示，并可现出「✎ 编辑」按钮；移动端不启用（点按固定走 .act） */
+.sb-tip.cap { pointer-events: auto; }
 .tip-actions { margin-top: 9px; border-top: 1px dashed rgba(255, 255, 255, 0.16); padding-top: 8px; }
 .tip-edit {
   width: 100%;

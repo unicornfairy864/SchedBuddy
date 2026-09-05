@@ -24,6 +24,13 @@ export default function App() {
   const [hoKey, setHoKey] = useState<string | null>(null);
   /** 点击方块固定悬浮窗（固定态下悬浮窗可交互，含「编辑」按钮） */
   const [pinned, setPinned] = useState<string | null>(null);
+  /** 桌面精确指针（hover: hover && pointer: fine）：悬浮窗本体可接收鼠标（移动端 false） */
+  const hoverCap = useMemo(
+    () => typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches,
+    [],
+  );
+  /** 指针当前位于悬浮窗本体上（桌面 hover 捕获态：窗内显示「✎ 编辑」，不被“离开方块”收起） */
+  const [tipOver, setTipOver] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const tipTimer = useRef<number | undefined>(undefined);
   const hintTimer = useRef<number | undefined>(undefined);
@@ -212,15 +219,29 @@ export default function App() {
   // 悬浮窗：隐藏时先淡出再卸载，保证淡入淡出动画
   const hideTip = useCallback(() => {
     setPinned(null);
+    setTipOver(false);
     if (tipTimer.current) window.clearTimeout(tipTimer.current);
     setHoKey(null);
     setTipVisible(false);
     tipTimer.current = window.setTimeout(() => setTip(null), 220);
   }, []);
 
+  // 指针移入/移出悬浮窗本体（仅桌面 hoverCap 生效）：移入 → 取消待淡出并保持显示（进入可交互态）
+  const handleTipPointer = useCallback((over: boolean) => {
+    if (over) {
+      if (tipTimer.current) window.clearTimeout(tipTimer.current);
+      setTipVisible(true);
+      setTipOver(true);
+    } else {
+      setTipOver(false);
+    }
+  }, []);
+
   // 指针移动（hover）→ 普通显示/隐藏；固定态下忽略“指针离开”类隐藏
   const handleHover = useCallback(
     (info: HoverInfo | null, key: string | null) => {
+      // 板面 hover 事件只会在指针不在悬浮窗上时发生：若此前捕获态为真，先复位
+      setTipOver(false);
       if (tipTimer.current) window.clearTimeout(tipTimer.current);
       if (!info) {
         if (pinned) return;
@@ -306,7 +327,9 @@ export default function App() {
       <BlockTooltip
         data={tip}
         hidden={!tipVisible}
-        interactive={editable && pinned !== null}
+        interactive={editable && (pinned !== null || (hoverCap && tipOver))}
+        cap={hoverCap}
+        onTipPointer={handleTipPointer}
         onEdit={(id) => {
           hideTip();
           openEdit(id);
@@ -339,10 +362,9 @@ export default function App() {
 
       <footer className="app-foot">
         <span className="tip-hint">
-          hover 方块查看详情
           {meta?.readOnly
-            ? ' · 只读模式（请在桌面主机编辑）'
-            : ' · 本机可编辑：点击方块 → 悬浮窗「✎ 编辑」'}
+            ? 'hover 方块查看详情 · 只读模式（请在桌面主机编辑）'
+            : 'hover 方块查看详情 · 移入悬浮窗 →「✎ 编辑」'}
         </span>
       </footer>
 
