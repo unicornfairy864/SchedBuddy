@@ -34,6 +34,9 @@ export default function App() {
   const [hint, setHint] = useState<string | null>(null);
   const tipTimer = useRef<number | undefined>(undefined);
   const hintTimer = useRef<number | undefined>(undefined);
+  /** 正在播放删除退场动画的日程 id（动画结束后才刷新列表移除） */
+  const leaveTimer = useRef<number | undefined>(undefined);
+  const [leaving, setLeaving] = useState<string | null>(null);
   const [editor, setEditor] = useState<
     | { mode: 'create'; prefill: SlotPrefill | null }
     | { mode: 'edit'; schedule: Schedule }
@@ -46,6 +49,7 @@ export default function App() {
     return () => {
       window.clearTimeout(tipTimer.current);
       window.clearTimeout(hintTimer.current);
+      window.clearTimeout(leaveTimer.current);
     };
   }, []);
 
@@ -84,9 +88,19 @@ export default function App() {
   }, []);
 
   const onModalDone = useCallback(
-    (msg: string) => {
+    (msg: string, removedId?: string) => {
       setEditor(null);
-      refresh();
+      if (removedId) {
+        // 先播放删除退场动画（块向左塌缩，~320ms），结束后再静默刷新移除列表
+        setLeaving(removedId);
+        if (leaveTimer.current) window.clearTimeout(leaveTimer.current);
+        leaveTimer.current = window.setTimeout(() => {
+          setLeaving(null);
+          refresh();
+        }, 320);
+      } else {
+        refresh();
+      }
       showHint(msg);
     },
     [refresh, showHint],
@@ -314,6 +328,7 @@ export default function App() {
               onHover={handleHover}
               editable={editable}
               onPin={handlePin}
+              leaving={leaving}
             />
             {meta && meta.termStart == null && (
               <div className="notice">

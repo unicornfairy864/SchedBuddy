@@ -232,6 +232,12 @@ body {
 .blk-title { overflow: hidden; text-overflow: ellipsis; width: 100%; }
 .sb-block:hover { transform: translateY(-1px); z-index: 5; box-shadow: 0 6px 16px rgba(31, 63, 95, 0.26); }
 .sb-block.slim { padding: 2px; }
+/* 删除退场：确认删除后块向左塌缩消失（~320ms 后刷新列表移除） */
+.sb-block.leaving {
+  animation: sb-collapse .28s var(--ease) forwards;
+  pointer-events: none;
+  z-index: 1;
+}
 
 /* 聚焦：hover 一块时其余块轻微弱化 */
 .bands.focus .sb-block.idl { opacity: 0.38; filter: saturate(0.7); }
@@ -365,6 +371,7 @@ body {
 /* ---------- 动画 ---------- */
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes grow { from { opacity: 0; transform: scaleX(0.9); } to { opacity: 1; transform: none; } }
+@keyframes sb-collapse { from { opacity: 1; transform: scaleX(1); } to { opacity: 0; transform: scaleX(0.15) translateX(-14px); } }
 
 /* 类型点缀色 */
 .t-fixed { --tcol: #e4574e; }

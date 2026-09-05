@@ -2,6 +2,15 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.35] - 2026-09-05
+
+### Added（删除退场动画 · v0.3 动画清单收尾，对应 `03-ui-spec.md` §5「删除」行）
+- 编辑弹窗确认删除 → 视图中该日程全部方块**向左塌缩消失**（`sb-collapse` 280ms 淡出 + scaleX 收缩左移），动画结束后才静默刷新列表移除（此前为瞬间消失）。
+- 新增/编辑保存的新块仍走既有 `grow` 入场动画（§5「新建保存」行已满足）。
+
+### Notes
+- 实现：`ScheduleModal.onDone` 回调增加 `removedId`（删除成功时传日程 id）；`App` 新增 `leaving` 状态与 320ms 延迟刷新（`leaveTimer`）；`DayBands` 新增 `leaving` prop，命中块加 `.leaving` 类；`style.css` 新增 `.sb-block.leaving` 与 `@keyframes sb-collapse`（退场块 `pointer-events:none`，防止动画中再被 hover）。
+
 ## [0.2.34] - 2026-09-05
 
 ### Changed（桌面悬浮窗可接住鼠标 · 就地现「✎ 编辑」按钮）

@@ -63,6 +63,8 @@ interface Props {
   /** 本机可编辑态：方块点击 → 固定悬浮窗（含「编辑」按钮） */
   editable?: boolean;
   onPin?: (key: string) => void;
+  /** 正在播放删除退场动画的日程 id（对应块向左塌缩消失，稍后刷新列表） */
+  leaving?: string | null;
 }
 
 export default function DayBands({
@@ -74,6 +76,7 @@ export default function DayBands({
   onHover,
   editable,
   onPin,
+  leaving,
 }: Props) {
   const laneH = density === 'day' ? 52 : 31;
   const style = { '--lane-h': `${laneH}px`, '--ruler-h': '24px' } as CSSProperties;
@@ -211,11 +214,12 @@ export default function DayBands({
                               const key = keyOf(occ);
                               // 仅周视图的窄块隐藏文字；日视图方块大，始终显示名称
                               const slim = density === 'week' && occ.endMin - occ.startMin <= 30;
+                              const exit = leaving === s.id;
                               return (
                                 <div
                                   key={key}
                                   data-k={key}
-                                  className={`sb-block t-${s.type}${focus ? '' : ' idl'}${key === hoKey ? ' ho' : ''}${slim ? ' slim' : ''}`}
+                                  className={`sb-block t-${s.type}${focus ? '' : ' idl'}${key === hoKey ? ' ho' : ''}${slim ? ' slim' : ''}${exit ? ' leaving' : ''}`}
                                   style={{ left: x(Math.max(occ.startMin, tr.start)), width: `${((Math.min(occ.endMin, tr.end) - Math.max(occ.startMin, tr.start)) / span) * 100}%`, background: s.color, color: textOn(s.color) }}
                                   onClick={(e) => handleBlock(e, key, occ, s)}
                                 >

@@ -163,7 +163,8 @@ interface Props {
   schedules: Schedule[];
   termStart: string | null;
   onClose: () => void;
-  onDone: (msg: string) => void; // 保存/删除成功后：刷新列表
+  /** 保存/删除成功后回调：msg 为 Snackbar 文案；removedId 传被删日程 id（用于退场动画后刷新） */
+  onDone: (msg: string, removedId?: string) => void;
   onNotify: (msg: string) => void; // 轻提示
 }
 
@@ -319,7 +320,7 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
     setBusy(true);
     try {
       await removeSchedule(editing.id);
-      onDone('已删除');
+      onDone('已删除', editing.id);
     } catch (e) {
       onNotify('删除失败：' + (e instanceof Error ? e.message : String(e)));
       setConfirmDel(false);
