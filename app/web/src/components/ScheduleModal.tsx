@@ -432,7 +432,7 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
               <div className="rule-sub">
                 <div className="fld inline">
                   <span className="fld-label">单双周</span>
-                  <select value={f.weekly.oddEven} onChange={(e) => toOdd(e.target.value as OddEven)}>
+                  <select className="sel" value={f.weekly.oddEven} onChange={(e) => toOdd(e.target.value as OddEven)}>
                     <option value="none">每周都有</option>
                     <option value="odd">仅单周</option>
                     <option value="even">仅双周</option>
