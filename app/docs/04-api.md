@@ -1,6 +1,6 @@
 # 04 · API 约定
 
-> 状态：生效　·　最近更新：v0.2.28（2026-09-05）　·　规范：`07-doc-standards.md`
+> 状态：生效　·　最近更新：v0.2.29（2026-09-05）　·　规范：`07-doc-standards.md`
 
 Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟或 `HH:mm`（见各接口）。错误统一 `{ error: string, details?: unknown }`。
 
@@ -18,10 +18,10 @@ Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟�
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | GET | `/api/meta` | `{ version, readOnly, port, hostname, termStart?, now }` |
-| GET | `/api/schedules` | 全部日程（含 rule/segments/overrides JSON） |
-| POST | `/api/schedules` | 新建；body: Schedule 对象（不含 id/created_at/updated_at）；`force?:boolean`。错误：`{error:'conflict', conflicts:[...]}` 或 `{error:'invalid', issues:[...]}` |
-| PUT | `/api/schedules/:id` | 全量更新，同上校验 |
-| DELETE | `/api/schedules/:id` | 删除（`404` 若不存在） |
+| GET | `/api/schedules` | 全部**在册**日程（含 rule/segments/overrides JSON；每条含同步元字段 `rev`/`deletedAt`/`lastWriter`） |
+| POST | `/api/schedules` | 新建；body: Schedule 对象（不含 id/created_at/updated_at 及同步元字段）；`force?:boolean`。错误：`{error:'conflict', conflicts:[...]}` 或 `{error:'invalid', issues:[...]}`。新建 = rev 1、lastWriter `'pc'` |
+| PUT | `/api/schedules/:id` | 全量更新，同上校验；保存即视为在册，rev = 既有值 + 1 |
+| DELETE | `/api/schedules/:id` | **软删除**（v0.2.29 起）：置 `deleted_at` 墓碑并 rev+1，删除可随同步传播；在册记录删除 → `{ok:true, deleted:true}`；已删除或不存在 → `404` |
 | GET | `/api/occurrences?from=YYYY-MM-DD&to=YYYY-MM-DD` | 服务端展开结果（调试/只读端可选缓存用） |
 | GET/PUT | `/api/settings` | `{ termStart?, termEnd?, weekCount?, holidays?, ui? }` |
 | GET | `/api/export` | 全量 JSON（schedule + settings），供备份迁移 |
@@ -29,7 +29,7 @@ Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟�
 
 服务端保存流程：`validateSchedule`（shared）→ 冲突检测 `detectConflicts`（shared，窗口 = 该日程可能影响范围，缺省 ±1 年）→ 策略判定 → 写库。
 
-> **规划（v0.3 起）**：DELETE 由物理删除改为**软删**（置 `deleted_at` 墓碑），删除作为同步变更双向传播；写路径维护 `rev`/`last_writer`（见 `02-data-model.md` §8）。
+> **已实现（v0.2.29，v0.3 数据层）**：DELETE 已由物理删除改为**软删**（置 `deleted_at` 墓碑并 rev+1）；写路径由服务端维护 `rev`/`deleted_at`/`last_writer`（客户端提交值一律忽略）；`GET /schedules`、`/occurrences`、保存时冲突检测均只含在册（未删除）日程，墓碑仅保留供 v0.5 同步 pull 消费（见 `02-data-model.md` §8）。
 
 ## 规划扩展接口（已决策 · v0.4–0.5 实现；当前代码未含）
 

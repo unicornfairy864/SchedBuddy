@@ -1,6 +1,6 @@
 # 02 · 数据模型与规则引擎
 
-> 状态：生效　·　最近更新：v0.2.28（2026-09-05）　·　规范：`07-doc-standards.md`
+> 状态：生效　·　最近更新：v0.2.29（2026-09-05）　·　规范：`07-doc-standards.md`
 
 ## 1. 概念模型
 
@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS settings (
 ```
 
 `settings` 内置键：`termStart`（学期第 1 周周一的日期，单双周锚点）、`termEnd`、`weekCount`、`holidays`(停课日期 JSON)、`defaultColor`、`ui`。
+
+> 上表为 **v2 基线**；迁移 v3（v0.2.29）起 `schedules` 与 `settings` 另含同步列 `rev` / `deleted_at` / `last_writer`（见 §8.1），读取/渲染只返回在册记录。
 
 ## 3. 规则展开引擎（shared 纯函数，浏览器与服务器共用）
 
@@ -115,24 +117,29 @@ Conflict = { date, a:{title,type,start,end}, b:{title,type,start,end} }。
 一次性：`rule = { kind:'once', date:'2026-09-12', times:[{startMin:540,endMin:660}] }`。
 单次例外示例：`overrides:[{date:'2026-09-08',action:'skip'},{date:'2026-09-15',action:'move',toDate:'2026-09-17'}]`。
 
-## 8. 同步扩展（已决策 · 规划；v0.3 起落库，当前代码未含）
+## 8. 同步扩展（8.1 已实现 · 8.2/8.3 属 v0.4–0.5 规划）
 
 场景与方案详见 `00-decisions.md` §1 行 8–12 与 `01-architecture.md` §1.1：PC 主机为**权威库**；
 Android App 内置库为**离线工作区**；用户在局域网内**手动 pull/push/merge**。为此需要：
 
-### 8.1 server `schedules` 表新增列（迁移 v3，随 v0.3 编辑功能落地）
+### 8.1 server `schedules` 表新增列（✅ 迁移 v3，v0.2.29 已实现）
 
 ```sql
 ALTER TABLE schedules ADD COLUMN rev          INTEGER NOT NULL DEFAULT 0; -- 单调同步序号
 ALTER TABLE schedules ADD COLUMN deleted_at   TEXT;                        -- 软删墓碑（NULL=在册）
 ALTER TABLE schedules ADD COLUMN last_writer  TEXT NOT NULL DEFAULT 'pc';  -- 最后修改设备 id
+UPDATE schedules SET rev = 1;   -- 既有在册行补基线（客户端 since=0 拉取时 rev>0 全部可见）
+ALTER TABLE settings  ADD COLUMN rev          INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE settings  ADD COLUMN deleted_at   TEXT;
+ALTER TABLE settings  ADD COLUMN last_writer  TEXT NOT NULL DEFAULT 'pc';
+UPDATE settings SET rev = 1;
 ```
 
-- **rev**：主机侧每次写 +1（含移动端经 push 落库的写），作为 pull/push 的单调水印（不依赖 `updatedAt` 字符串比较，规避时钟偏移/同毫秒碰撞）。
-- **软删**：v0.3 起写路径的 DELETE 只置 `deleted_at`（墓碑），物理删除不做（导出/迁移时可整体剔除）。删除作为一条“变更”双向传播，避免“一端删除、另一端同步后复活”。
-- **last_writer**：记录最后写入设备（本机 = `'pc'`，App = 其 deviceId），merge 展示归属。
+- **rev**：主机侧每次写 +1（含移动端经 push 落库的写），作为 pull/push 的单调水印（不依赖 `updatedAt` 字符串比较，规避时钟偏移/同毫秒碰撞）。新建 = rev 1；更新 = 既有 rev + 1。
+- **软删（已实现）**：写路径的 DELETE 只置 `deleted_at` 并 rev+1（墓碑），物理删除不做；删除作为一条“变更”双向传播，避免“一端删除、另一端同步后复活”。`listSchedules`/`GET /schedules`/`/occurrences`/保存时冲突检测只含在册（`deleted_at IS NULL`）记录。
+- **last_writer（已实现）**：记录最后写入设备（本机 = `'pc'`，App = 其 deviceId）；服务端强制维护，客户端提交的 rev/deletedAt/lastWriter 一律忽略。
 
-`settings` 表以 `key` 为记录单位参与同步（同样具备 rev/墓碑/last_writer 语义；当前仅 termStart 等少数键，冲突概率极低）。
+`settings` 表以 `key` 为记录单位参与同步（迁移 v3 已带 rev/墓碑/last_writer 列；`setSettings` 每次写 rev+1。当前仅 termStart 等少数键，冲突概率极低）。
 
 ### 8.2 App 内置库（规划 v0.4–0.5）
 

@@ -5,13 +5,13 @@ import { validateSchedule } from '../../shared/src/validate';
 import { todayStr } from '../../shared/src/time';
 import type { Occurrence, Schedule } from '../../shared/src/types';
 import {
-  deleteSchedule,
   getSchedule,
   getSettings,
   insertSchedule,
   listSchedules,
   newId,
   setSettings,
+  softDeleteSchedule,
   updateSchedule,
   type Store,
 } from './db';
@@ -88,6 +88,10 @@ export function makeApi(store: Store) {
       overrides: Array.isArray(body.overrides) ? body.overrides : [],
       createdAt: now,
       updatedAt: now,
+      // 同步元字段由服务端维护，客户端提交值一律忽略（见 docs/02 §8）：
+      rev: 1,
+      deletedAt: null,
+      lastWriter: 'pc',
     };
   }
 
@@ -127,11 +131,15 @@ export function makeApi(store: Store) {
   r.put('/schedules/:id', writeGuard, (req, res) => {
     const body = req.body ?? {};
     const existing = getSchedule(store, req.params.id);
-    if (!existing) return res.status(404).json({ error: 'notfound' });
+    if (!existing || existing.deletedAt) return res.status(404).json({ error: 'notfound' });
     const issues = validateSchedule({ ...existing, ...body });
     if (issues.length) return rejectIssues(res, issues);
     const candidate = buildCandidate({ ...existing, ...body }, existing.id);
     candidate.createdAt = existing.createdAt;
+    // 同步元字段服务端维护：rev 在既有值上 +1，lastWriter=本机（'pc'），保存即视为在册
+    candidate.rev = (existing.rev ?? 0) + 1;
+    candidate.lastWriter = 'pc';
+    candidate.deletedAt = null;
     const all = listSchedules(store);
     if (!checkConflicts(res, all, candidate, body.force === true)) return;
     updateSchedule(store, candidate);
@@ -139,7 +147,8 @@ export function makeApi(store: Store) {
   });
 
   r.delete('/schedules/:id', writeGuard, (req, res) => {
-    if (deleteSchedule(store, req.params.id)) res.json({ ok: true });
+    // v0.3：软删除（置 deleted_at 墓碑并 rev+1，删除可随同步传播）；已删除/不存在 → 404
+    if (softDeleteSchedule(store, req.params.id, 'pc')) res.json({ ok: true, deleted: true });
     else res.status(404).json({ error: 'notfound' });
   });
 

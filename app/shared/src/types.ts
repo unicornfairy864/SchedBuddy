@@ -81,6 +81,12 @@ export interface Schedule {
   overrides: Override[];
   createdAt: string; // ISO
   updatedAt: string;
+  /** 单调同步序号（服务端维护，每次写 +1；pull/push 水印，见 docs/02 §8） */
+  rev: number;
+  /** 软删墓碑；非 null = 已删除（v0.3 起删除只置此列，物理删除不做） */
+  deletedAt: DateStr | null;
+  /** 最后修改设备 id（本机 = 'pc'；App = 其 deviceId） */
+  lastWriter: string;
 }
 
 /** 展开结果：一次"具体发生"，窗口粒度 = (日期, 起止) */

@@ -34,6 +34,17 @@ const MIGRATIONS = [
   // v2: 早期版本含冗余 NOT NULL 列 segments_json（无默认值导致插入失败），重建表移除。
   `DROP TABLE IF EXISTS schedules;
    ${TABLE_DDL}`,
+  // v3: 同步字段（docs/02 §8.1，v0.2.29 落库）：
+  //     rev = 单调同步序号（pull/push 水印）；deleted_at = 软删墓碑；last_writer = 最后修改设备。
+  //     既有行补基线 rev=1（新客户端 since=0 拉取时 rev>0 全部可见）。
+  `ALTER TABLE schedules ADD COLUMN rev INTEGER NOT NULL DEFAULT 0;
+   ALTER TABLE schedules ADD COLUMN deleted_at TEXT;
+   ALTER TABLE schedules ADD COLUMN last_writer TEXT NOT NULL DEFAULT 'pc';
+   UPDATE schedules SET rev = 1;
+   ALTER TABLE settings ADD COLUMN rev INTEGER NOT NULL DEFAULT 0;
+   ALTER TABLE settings ADD COLUMN deleted_at TEXT;
+   ALTER TABLE settings ADD COLUMN last_writer TEXT NOT NULL DEFAULT 'pc';
+   UPDATE settings SET rev = 1;`,
 ];
 
 export function openStore(dataDir: string): Store {
@@ -72,10 +83,22 @@ export function rowToSchedule(row: any): Schedule {
     overrides: JSON.parse(row.overrides_json ?? '[]'),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    rev: row.rev ?? 0,
+    deletedAt: row.deleted_at ?? null,
+    lastWriter: row.last_writer ?? 'pc',
   } as Schedule;
 }
 
+/** 在册（未软删）日程；列表/渲染/冲突检测/普通读取一律只含在册记录。 */
 export function listSchedules(store: Store): Schedule[] {
+  const rows = store.db
+    .prepare('SELECT * FROM schedules WHERE deleted_at IS NULL ORDER BY updated_at DESC')
+    .all() as any[];
+  return rows.map(rowToSchedule);
+}
+
+/** 含墓碑的全量行（同步 v0.5 的 pull 使用；普通路径请用 listSchedules）。 */
+export function listSchedulesAll(store: Store): Schedule[] {
   const rows = store.db.prepare('SELECT * FROM schedules ORDER BY updated_at DESC').all() as any[];
   return rows.map(rowToSchedule);
 }
@@ -84,8 +107,8 @@ export function insertSchedule(store: Store, s: Schedule): void {
   store.db
     .prepare(
       `INSERT INTO schedules
-       (id,title,notes,type,color,rule_json,overrides_json,active_from,active_to,created_at,updated_at)
-       VALUES (@id,@title,@notes,@type,@color,@rule_json,@overrides_json,@active_from,@active_to,@created_at,@updated_at)`,
+       (id,title,notes,type,color,rule_json,overrides_json,active_from,active_to,created_at,updated_at,rev,deleted_at,last_writer)
+       VALUES (@id,@title,@notes,@type,@color,@rule_json,@overrides_json,@active_from,@active_to,@created_at,@updated_at,@rev,@deleted_at,@last_writer)`,
     )
     .run({
       id: s.id,
@@ -99,6 +122,9 @@ export function insertSchedule(store: Store, s: Schedule): void {
       active_to: s.activeTo,
       created_at: s.createdAt,
       updated_at: s.updatedAt,
+      rev: s.rev ?? 1,
+      deleted_at: s.deletedAt ?? null,
+      last_writer: s.lastWriter ?? 'pc',
     });
 }
 
@@ -107,7 +133,8 @@ export function updateSchedule(store: Store, s: Schedule): void {
     .prepare(
       `UPDATE schedules SET
        title=@title,notes=@notes,type=@type,color=@color,rule_json=@rule_json,
-       overrides_json=@overrides_json,active_from=@active_from,active_to=@active_to,updated_at=@updated_at
+       overrides_json=@overrides_json,active_from=@active_from,active_to=@active_to,
+       updated_at=@updated_at,rev=@rev,deleted_at=@deleted_at,last_writer=@last_writer
        WHERE id=@id`,
     )
     .run({
@@ -121,7 +148,23 @@ export function updateSchedule(store: Store, s: Schedule): void {
       active_from: s.activeFrom,
       active_to: s.activeTo,
       updated_at: s.updatedAt,
+      rev: s.rev ?? 1,
+      deleted_at: s.deletedAt ?? null,
+      last_writer: s.lastWriter ?? 'pc',
     });
+}
+
+/** 软删除（v0.3 起 DELETE 只置墓碑并 rev+1，删除可双向传播）；已删除/不存在返回 false。 */
+export function softDeleteSchedule(store: Store, id: string, writer = 'pc'): boolean {
+  const now = new Date().toISOString();
+  const r = store.db
+    .prepare(
+      `UPDATE schedules
+       SET deleted_at=@now, last_writer=@writer, updated_at=@now, rev=rev+1
+       WHERE id=@id AND deleted_at IS NULL`,
+    )
+    .run({ id, now, writer });
+  return r.changes > 0;
 }
 
 export function getSchedule(store: Store, id: string): Schedule | null {
@@ -130,14 +173,10 @@ export function getSchedule(store: Store, id: string): Schedule | null {
   return rowToSchedule(row);
 }
 
-export function deleteSchedule(store: Store, id: string): boolean {
-  return store.db.prepare('DELETE FROM schedules WHERE id=?').run(id).changes > 0;
-}
-
 /* ---------- settings ---------- */
 
 export function getSettings(store: Store): Settings {
-  const rows = store.db.prepare('SELECT key,value FROM settings').all() as any[];
+  const rows = store.db.prepare('SELECT key,value FROM settings WHERE deleted_at IS NULL').all() as any[];
   const out: Settings = {};
   for (const r of rows) {
     try {
@@ -149,12 +188,14 @@ export function getSettings(store: Store): Settings {
   return out;
 }
 
-export function setSettings(store: Store, patch: Settings): void {
+/** 设置写入维护 rev/last_writer（每键每次写 rev+1，参与同步水印）。 */
+export function setSettings(store: Store, patch: Settings, writer = 'pc'): void {
   const up = store.db.prepare(
-    'INSERT INTO settings (key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+    `INSERT INTO settings (key,value,rev,last_writer) VALUES (?,?,1,?)
+     ON CONFLICT(key) DO UPDATE SET value=excluded.value, rev=settings.rev+1, last_writer=excluded.last_writer`,
   );
   for (const [k, v] of Object.entries(patch)) {
-    up.run(k, JSON.stringify(v));
+    up.run(k, JSON.stringify(v), writer);
   }
 }
 

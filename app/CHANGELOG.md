@@ -2,6 +2,22 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.29] - 2026-09-05
+
+### Added（v0.3 数据层起步 · 同步字段落库，对应新架构文档 `02-data-model.md` §8）
+- `schedules`/`settings` **迁移 v3**：新增 `rev`（单调同步序号，每次写 +1，pull/push 水印）、`deleted_at`（软删墓碑）、`last_writer`（最后修改设备）；既有行补基线 rev=1（客户端 since=0 拉取可见全部）。
+- shared `Schedule` 类型新增 `rev`/`deletedAt`/`lastWriter`；`server` 读写与 API 响应同步携带。
+
+### Changed
+- **DELETE 改为软删**：置 `deleted_at` 墓碑并 rev+1（删除可随同步双向传播）；二次删除/不存在 → 404；`GET /schedules`、`/occurrences`、保存时冲突检测只含在册记录（`listSchedules` 过滤墓碑；新增 `listSchedulesAll` 备 v0.5 pull）。
+- 同步元字段**服务端强制维护**（新建 rev=1、更新 rev=既有+1、lastWriter=`'pc'`、保存即视为在册），客户端提交的 rev/deletedAt/lastWriter 一律忽略。
+- `setSettings` 每次写维护 `rev`/`last_writer`（settings 按 key 参与同步水印）；`getSettings` 过滤已删键。
+- 物理删除函数 `deleteSchedule` 移除，`server/src/db.ts`/`api.ts` 改为软删路径。
+
+### Verified
+- 引擎自测 13 组通过（`npm test`）。
+- API 冒烟（临时数据目录）：POST rev=1 → PUT rev=2 → DELETE 后列表为空、二次删除 404、墓碑保留 rev=3；settings 两次写 rev=2；客户端注入同步字段被忽略。
+
 ## [0.2.28] - 2026-09-05
 
 ### Docs（规划决策轮：新增 Android 移动写端 + 离线手动同步体系，代码未动）
