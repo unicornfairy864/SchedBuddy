@@ -154,20 +154,23 @@ body {
   margin-top: 4px; font-size: 11px; color: #fff; background: var(--accent);
   border-radius: 999px; padding: 2px 9px;
 }
-/* 周几/上午下午 行内新建按钮（仅本机可编辑态渲染） */
+/* 周几/上午下午 行内新建按钮（仅本机可编辑态渲染；低调白底小圆钮） */
 .band-gutter .gutter-line {
   display: flex; align-items: center; justify-content: center;
   gap: 6px; flex-wrap: wrap;
 }
 .band-add {
-  flex: none; width: 24px; height: 24px; border: 0; border-radius: 50%;
+  flex: none; width: 20px; height: 20px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--accent); color: #fff;
-  font-size: 16px; line-height: 1; padding: 0; cursor: pointer;
-  box-shadow: 0 2px 6px rgba(62, 175, 155, 0.35);
-  transition: transform .15s var(--ease), background .15s, box-shadow .15s;
+  border: 1px solid var(--line); background: #fff; color: var(--accent);
+  font-size: 13px; font-weight: 600; line-height: 1; padding: 0; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(31, 63, 95, 0.08);
+  transition: transform .15s var(--ease), background .15s, box-shadow .15s, border-color .15s;
 }
-.band-add:hover { background: #2f9b88; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(62, 175, 155, 0.4); }
+.band-add:hover {
+  background: #f0faf7; border-color: var(--accent); color: var(--accent);
+  transform: translateY(-1px); box-shadow: 0 2px 6px rgba(62, 175, 155, 0.25);
+}
 .band-add:active { transform: scale(0.9); }
 .band-body {
   flex: 1; min-width: 0;
@@ -459,7 +462,7 @@ body {
 @media (max-width: 860px) {
   .band-gutter { width: 62px; }
   .band-gutter .gutter-line { gap: 4px; }
-  .band-add { width: 20px; height: 20px; font-size: 14px; }
+  .band-add { width: 18px; height: 18px; font-size: 12px; }
 }
 
 /* ===== v0.3 编辑交互 ===== */

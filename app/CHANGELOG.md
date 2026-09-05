@@ -2,6 +2,11 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.37] - 2026-09-05
+
+### Changed（日带「＋」收敛为白底小圆钮）
+- 各日带 gutter 的新建「＋」由 24px 主色实心圆改为 **20px 白底细边小圆**（主色小号 ＋，hover 才泛起浅青描边）；≤860px 进一步微缩至 18px。功能/预填逻辑不变。
+
 ## [0.2.36] - 2026-09-05
 
 ### Changed（新建入口移到各日带 gutter · 顶栏精简）
