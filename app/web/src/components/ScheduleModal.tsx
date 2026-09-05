@@ -73,6 +73,7 @@ function summarizeConflicts(list: { date: string; a: any; b: any }[]): Summarize
 
 type Kind = 'weekly' | 'interval' | 'once';
 type OddEven = 'none' | 'odd' | 'even';
+type LimitSel = 'none' | 'range' | 'count';
 
 interface FormState {
   title: string;
@@ -85,6 +86,8 @@ interface FormState {
   once: { date: string; rows: RowUi[] };
   activeFrom: string;
   activeTo: string;
+  /** 课程总数量（仅 limitSel='count' 时使用，数字文本；空 = 不限） */
+  occurrenceLimit: string;
 }
 
 export interface SlotPrefill {
@@ -138,6 +141,7 @@ function initForm(initial: { schedule: Schedule | null; prefill: SlotPrefill | n
       once: r.once ?? { date: '', rows: [{ weekday: 1, ...ROW_BLANK }] },
       activeFrom: s.activeFrom ?? '',
       activeTo: s.activeTo ?? '',
+      occurrenceLimit: s.occurrenceLimit != null ? String(s.occurrenceLimit) : '',
     };
   }
   const p = initial.prefill;
@@ -155,6 +159,7 @@ function initForm(initial: { schedule: Schedule | null; prefill: SlotPrefill | n
     once: { date: p?.date ?? '', rows: [{ weekday: 1, start: st, end: en }] },
     activeFrom: '',
     activeTo: '',
+    occurrenceLimit: '',
   };
 }
 
@@ -177,8 +182,13 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   const [issueRows, setIssueRows] = useState<string[]>([]);
   const [confirmDel, setConfirmDel] = useState(false);
   const [serverIssues, setServerIssues] = useState<string[]>([]);
-  /** 生效范围启用开关（勾选后才显示起止日期；关闭即清空范围） */
-  const [rangeOn, setRangeOn] = useState(() => Boolean(initial.schedule?.activeFrom || initial.schedule?.activeTo));
+  /** 生效限制（二选一）：不限 / 日期范围 / 课程总数量 */
+  const [limitSel, setLimitSel] = useState<LimitSel>(() => {
+    const s = initial.schedule;
+    if (s?.occurrenceLimit != null) return 'count';
+    if (s?.activeFrom || s?.activeTo) return 'range';
+    return 'none';
+  });
   /** 「高级」折叠区（单双周+生效范围）：新建默认收起；编辑且带相关设置时自动展开 */
   const [advOpen, setAdvOpen] = useState(() => {
     const s = initial.schedule;
@@ -221,7 +231,7 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   useEffect(() => {
     setIssueRows([]);
     setServerIssues([]);
-  }, [f.title, f.notes, f.type, f.color, f.kind, f.activeFrom, f.activeTo, f.weekly, f.interval, f.once]);
+  }, [f.title, f.notes, f.type, f.color, f.kind, f.activeFrom, f.activeTo, f.occurrenceLimit, f.weekly, f.interval, f.once]);
 
   /* ----- 构建候选（供校验与冲突预检） ----- */
   const buildDraft = useMemo((): { draft: ScheduleDraft; rowIssues: string[] } => {
@@ -278,20 +288,28 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
       if (!isValidDateStr(f.once.date)) rowIssues.push('日期无效');
     }
 
-    const activeFrom = f.activeFrom === '' ? null : f.activeFrom;
-    const activeTo = f.activeTo === '' ? null : f.activeTo;
+    const activeFrom = limitSel === 'range' && f.activeFrom !== '' ? f.activeFrom : null;
+    const activeTo = limitSel === 'range' && f.activeTo !== '' ? f.activeTo : null;
+    let occurrenceLimit: number | null = null;
+    if (limitSel === 'count') {
+      const rawN = f.occurrenceLimit.trim();
+      if (rawN === '') rowIssues.push('课程总数量未填写');
+      else if (!/^\d+$/.test(rawN) || Number(rawN) < 1) rowIssues.push('课程总数量须为正整数');
+      else occurrenceLimit = Number(rawN);
+    }
     const draft: ScheduleDraft = {
       title: f.title.trim(),
       notes: f.notes,
       type: f.type,
       color: f.color,
       rule,
-      activeFrom: isValidDateStr(f.activeFrom) ? f.activeFrom : null,
-      activeTo: isValidDateStr(f.activeTo) ? f.activeTo : null,
+      activeFrom,
+      activeTo,
+      occurrenceLimit,
       overrides: editing?.overrides ?? [],
     };
     return { draft, rowIssues };
-  }, [f, termStart, editing]);
+  }, [f, termStart, editing, limitSel]);
 
   /* ----- 校验 + 本地冲突预检 ----- */
   const { issues, conflicts } = useMemo(() => {
@@ -378,6 +396,13 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   const toOdd = (v: OddEven) => {
     const weekStart = f.weekly.weekStart || termStart || '';
     patchWeekly({ oddEven: v, weekStart: v === 'none' ? '' : weekStart });
+  };
+  /* ----- 生效限制切换（二选一，切换即清空另一方） ----- */
+  const pickLimit = (m: LimitSel) => {
+    setLimitSel(m);
+    if (m === 'none') set({ activeFrom: '', activeTo: '', occurrenceLimit: '' });
+    else if (m === 'range') set({ occurrenceLimit: '' });
+    else set({ activeFrom: '', activeTo: '' });
   };
 
   const autoFocusRef = useRef<HTMLInputElement>(null);
@@ -578,35 +603,38 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
                   </div>
                 )}
                 <div className="adv-block">
-                  <div className="fld">
-                    <label className="fld-check">
-                      <input type="checkbox" checked={rangeOn}
-                        onChange={(e) => {
-                          const on = e.target.checked;
-                          setRangeOn(on);
-                          if (!on) set({ activeFrom: '', activeTo: '' });
-                        }} />
-                      <span>启用生效范围</span>
-                    </label>
-                    {rangeOn && (
-                      <>
-                        <div className="range-pair">
-                          <DateField value={f.activeFrom} ariaLabel="生效起始" defaultDate={initial.prefill?.date}
-                            onChange={(v) => set({ activeFrom: v })}
-                            onDayDone={focusToYear} />
-                          <i className="dash">至</i>
-                          <span ref={activeToWrap}>
-                            <DateField value={f.activeTo} ariaLabel="生效结束"
-                              onChange={(v) => set({ activeTo: v })} />
-                          </span>
-                          {(f.activeFrom || f.activeTo) && (
-                            <button type="button" className="mini-btn" onClick={() => set({ activeFrom: '', activeTo: '' })}>清除</button>
-                          )}
-                        </div>
-                        {f.activeFrom && f.activeTo && f.activeFrom > f.activeTo && <div className="fld-err">起止颠倒</div>}
-                      </>
-                    )}
+                  <span className="fld-label">生效限制</span>
+                  <div className="seg small">
+                    <button type="button" className={limitSel === 'none' ? 'on' : ''} onClick={() => pickLimit('none')}>不限制</button>
+                    <button type="button" className={limitSel === 'range' ? 'on' : ''} onClick={() => pickLimit('range')}>日期范围</button>
+                    <button type="button" className={limitSel === 'count' ? 'on' : ''} onClick={() => pickLimit('count')}>课程总数量</button>
                   </div>
+                  {limitSel === 'range' && (
+                    <div className="fld">
+                      <div className="range-pair">
+                        <DateField value={f.activeFrom} ariaLabel="生效起始" defaultDate={initial.prefill?.date}
+                          onChange={(v) => set({ activeFrom: v })}
+                          onDayDone={focusToYear} />
+                        <i className="dash">至</i>
+                        <span ref={activeToWrap}>
+                          <DateField value={f.activeTo} ariaLabel="生效结束"
+                            onChange={(v) => set({ activeTo: v })} />
+                        </span>
+                        {(f.activeFrom || f.activeTo) && (
+                          <button type="button" className="mini-btn" onClick={() => set({ activeFrom: '', activeTo: '' })}>清除</button>
+                        )}
+                      </div>
+                      {f.activeFrom && f.activeTo && f.activeFrom > f.activeTo && <div className="fld-err">起止颠倒</div>}
+                    </div>
+                  )}
+                  {limitSel === 'count' && (
+                    <label className="fld inline">
+                      <span className="fld-label">共</span>
+                      <input className="num" type="number" min={1} inputMode="numeric" value={f.occurrenceLimit}
+                        onChange={(e) => set({ occurrenceLimit: e.target.value })} placeholder="如 16" />
+                      <span className="fld-suffix">天（该日程最多发生的天数；同日多时段按 1 天计）</span>
+                    </label>
+                  )}
                 </div>
               </div>
             </div>

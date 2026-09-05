@@ -175,6 +175,35 @@ function check(name, fn) {
   check('无重叠可选与固定同排(无空排)', () => {});
 }
 
+// ---- 课程总数量（按天计次）----
+{
+  // weekly 每周一&三，限 3 天 → 第 1 周 一/三 + 第 2 周 一 后截止
+  const s = {
+    ...base,
+    occurrenceLimit: 3,
+    rule: {
+      kind: 'weekly', weekStart: '2025-09-01', oddEven: 'none',
+      segments: [
+        { weekday: 1, startMin: 8 * 60, endMin: 9 * 60 + 30 },
+        { weekday: 3, startMin: 10 * 60, endMin: 11 * 60 + 30 },
+      ],
+    },
+  };
+  const occ = expandSchedule(s, { from: '2025-09-01', to: '2025-10-31', termStart: '2025-09-01' });
+  assert.deepStrictEqual(occ.map((o) => o.date), ['2025-09-01', '2025-09-03', '2025-09-08']);
+  check('总数量3天：周一&周三截止', () => {});
+
+  // interval 每 3 天，限 2 天 → 仅前两次
+  const s2 = {
+    ...base,
+    occurrenceLimit: 2,
+    rule: { kind: 'interval', startDate: '2025-09-01', everyNDays: 3, times: [{ startMin: 12 * 60, endMin: 13 * 60 }] },
+  };
+  const occ2 = expandSchedule(s2, { from: '2025-09-01', to: '2025-12-31', termStart: null });
+  assert.deepStrictEqual(occ2.map((o) => o.date), ['2025-09-01', '2025-09-04']);
+  check('总数量2次：隔3天仅前两次', () => {});
+}
+
 // ---- validate ----
 {
   assert.ok(validateSchedule({ ...base, title: '', rule: { kind: 'weekly', weekStart: null, oddEven: 'odd', segments: [] } }).length >= 2);

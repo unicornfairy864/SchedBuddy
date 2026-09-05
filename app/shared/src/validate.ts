@@ -24,6 +24,9 @@ export function validateSchedule(s: Partial<Schedule>): string[] {
   if (s.activeFrom && !isValidDateStr(s.activeFrom)) issues.push('生效起始日期格式错误');
   if (s.activeTo && !isValidDateStr(s.activeTo)) issues.push('生效结束日期格式错误');
   if (s.activeFrom && s.activeTo && s.activeFrom > s.activeTo) issues.push('生效范围起止颠倒');
+  if (s.occurrenceLimit != null) {
+    if (!Number.isInteger(s.occurrenceLimit) || (s.occurrenceLimit as number) < 1) issues.push('课程总数量须为正整数');
+  }
 
   const rule = s.rule as Schedule['rule'] | undefined;
   if (!rule) {

@@ -32,6 +32,71 @@ export function expandSchedule(s: Schedule, ctx: ExpandCtx): Occurrence[] {
 
   const active = (d: string) => inActiveRange(s, d) && !skipDates.has(d);
 
+  // —— 课程总数量（occurrenceLimit，按天计次）：从起始沿时间轴推进，累计 N 天后截止 ——
+  const limit = s.occurrenceLimit ?? null;
+  if (limit != null && limit > 0) {
+    const rule = s.rule;
+    let origin: number;
+    if (rule.kind === 'weekly') {
+      // 有学期/单双周锚点或生效起点 → 从锚点起算；否则以查询窗口起点为准（无锚点无法回溯历史）
+      const anchor = rule.weekStart ?? ctx.termStart ?? s.activeFrom;
+      origin = anchor ? epochDay(anchor) : epochDay(ctx.from);
+    } else if (rule.kind === 'interval') {
+      origin = epochDay(rule.startDate);
+    } else {
+      origin = epochDay(rule.date);
+    }
+    const endD = epochDay(ctx.to);
+    let counted = 0; // 已“发生”的天数（停课/单次跳过不计，仍计入的以排程日为准）
+
+    const tick = (d: string): boolean => {
+      // 返回是否发生（消耗一次计数）
+      if (holidays.has(d)) return false;
+      if (skipDates.has(d)) return false;
+      return inActiveRange(s, d);
+    };
+
+    if (rule.kind === 'weekly') {
+      const weekStart = rule.weekStart ?? ctx.termStart ?? null;
+      const parity = rule.oddEven === 'none' ? ('none' as const) : rule.oddEven;
+      for (let e = origin; e <= endD && counted < limit; e++) {
+        const d = fromEpochDay(e);
+        if (!tick(d)) continue;
+        if (parity !== 'none' && !matchesOddEven(d, parity, weekStart)) continue;
+        const wd = weekdayOf(d);
+        let hit = false;
+        for (const seg of rule.segments) {
+          if (seg.weekday === wd) {
+            hit = true;
+            emit(d, seg.startMin, seg.endMin);
+          }
+        }
+        if (hit) counted++;
+      }
+    } else if (rule.kind === 'interval') {
+      const startE = epochDay(rule.startDate);
+      if (startE > endD) return out;
+      let k = Math.max(0, Math.ceil((origin - startE) / rule.everyNDays));
+      for (;;) {
+        if (counted >= limit) break;
+        const n = startE + k * rule.everyNDays;
+        if (n > endD) break;
+        const d = fromEpochDay(n);
+        if (tick(d)) {
+          counted++;
+          for (const t of rule.times) emit(d, t.startMin, t.endMin);
+        }
+        k++;
+      }
+    } else {
+      const d = rule.date;
+      if (origin <= endD && tick(d)) for (const t of rule.times) emit(d, t.startMin, t.endMin);
+    }
+
+    out.sort((a, b) => (a.date === b.date ? a.startMin - b.startMin : a.date < b.date ? -1 : 1));
+    return out;
+  }
+
   if (s.rule.kind === 'weekly') {
     const rule = s.rule;
     const weekStart = rule.weekStart ?? ctx.termStart ?? null;

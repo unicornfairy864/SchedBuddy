@@ -45,6 +45,8 @@ const MIGRATIONS = [
    ALTER TABLE settings ADD COLUMN deleted_at TEXT;
    ALTER TABLE settings ADD COLUMN last_writer TEXT NOT NULL DEFAULT 'pc';
    UPDATE settings SET rev = 1;`,
+  // v4: 课程总数量（occurrence_limit，按天计次，见 docs/02；NULL = 不限）。
+  `ALTER TABLE schedules ADD COLUMN occurrence_limit INTEGER;`,
 ];
 
 export function openStore(dataDir: string): Store {
@@ -80,6 +82,7 @@ export function rowToSchedule(row: any): Schedule {
     rule: JSON.parse(row.rule_json),
     activeFrom: row.active_from,
     activeTo: row.active_to,
+    occurrenceLimit: row.occurrence_limit ?? null,
     overrides: JSON.parse(row.overrides_json ?? '[]'),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -107,8 +110,8 @@ export function insertSchedule(store: Store, s: Schedule): void {
   store.db
     .prepare(
       `INSERT INTO schedules
-       (id,title,notes,type,color,rule_json,overrides_json,active_from,active_to,created_at,updated_at,rev,deleted_at,last_writer)
-       VALUES (@id,@title,@notes,@type,@color,@rule_json,@overrides_json,@active_from,@active_to,@created_at,@updated_at,@rev,@deleted_at,@last_writer)`,
+       (id,title,notes,type,color,rule_json,overrides_json,active_from,active_to,occurrence_limit,created_at,updated_at,rev,deleted_at,last_writer)
+       VALUES (@id,@title,@notes,@type,@color,@rule_json,@overrides_json,@active_from,@active_to,@occurrence_limit,@created_at,@updated_at,@rev,@deleted_at,@last_writer)`,
     )
     .run({
       id: s.id,
@@ -120,6 +123,7 @@ export function insertSchedule(store: Store, s: Schedule): void {
       overrides_json: JSON.stringify(s.overrides ?? []),
       active_from: s.activeFrom,
       active_to: s.activeTo,
+      occurrence_limit: s.occurrenceLimit ?? null,
       created_at: s.createdAt,
       updated_at: s.updatedAt,
       rev: s.rev ?? 1,
@@ -134,6 +138,7 @@ export function updateSchedule(store: Store, s: Schedule): void {
       `UPDATE schedules SET
        title=@title,notes=@notes,type=@type,color=@color,rule_json=@rule_json,
        overrides_json=@overrides_json,active_from=@active_from,active_to=@active_to,
+       occurrence_limit=@occurrence_limit,
        updated_at=@updated_at,rev=@rev,deleted_at=@deleted_at,last_writer=@last_writer
        WHERE id=@id`,
     )
@@ -147,6 +152,7 @@ export function updateSchedule(store: Store, s: Schedule): void {
       overrides_json: JSON.stringify(s.overrides ?? []),
       active_from: s.activeFrom,
       active_to: s.activeTo,
+      occurrence_limit: s.occurrenceLimit ?? null,
       updated_at: s.updatedAt,
       rev: s.rev ?? 1,
       deleted_at: s.deletedAt ?? null,

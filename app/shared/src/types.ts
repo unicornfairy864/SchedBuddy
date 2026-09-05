@@ -78,6 +78,9 @@ export interface Schedule {
   rule: ScheduleRule;
   activeFrom: DateStr | null; // 生效范围（含边界）
   activeTo: DateStr | null;
+  /** 课程总数量：最多“发生 N 天”（按天计次，含多时段同日=1；null=不限）。
+   *  与 activeFrom/activeTo 为同一约束的两种表达，UI 二选一（引擎见 expand.ts）。 */
+  occurrenceLimit: number | null;
   overrides: Override[];
   createdAt: string; // ISO
   updatedAt: string;

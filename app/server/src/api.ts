@@ -85,6 +85,7 @@ export function makeApi(store: Store) {
       rule: body.rule,
       activeFrom: body.activeFrom ?? null,
       activeTo: body.activeTo ?? null,
+      occurrenceLimit: body.occurrenceLimit == null ? null : Number(body.occurrenceLimit),
       overrides: Array.isArray(body.overrides) ? body.overrides : [],
       createdAt: now,
       updatedAt: now,

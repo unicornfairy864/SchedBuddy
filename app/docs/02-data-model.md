@@ -1,6 +1,6 @@
 # 02 · 数据模型与规则引擎
 
-> 状态：生效　·　最近更新：v0.2.29（2026-09-05）　·　规范：`07-doc-standards.md`
+> 状态：生效　·　最近更新：v0.2.53（2026-09-05）　·　规范：`07-doc-standards.md`
 
 ## 1. 概念模型
 
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 `settings` 内置键：`termStart`（学期第 1 周周一的日期，单双周锚点）、`termEnd`、`weekCount`、`holidays`(停课日期 JSON)、`defaultColor`、`ui`。
 
-> 上表为 **v2 基线**；迁移 v3（v0.2.29）起 `schedules` 与 `settings` 另含同步列 `rev` / `deleted_at` / `last_writer`（见 §8.1），读取/渲染只返回在册记录。
+> 上表为 **v2 基线**；迁移 v3（v0.2.29）起 `schedules` 与 `settings` 另含同步列 `rev` / `deleted_at` / `last_writer`（见 §8.1）；迁移 v4（v0.2.53）起 `schedules` 另含 `occurrence_limit INTEGER`（课程总数量，按天计次，NULL = 不限，见 §3 展开），读取/渲染只返回在册记录。
 
 ## 3. 规则展开引擎（shared 纯函数，浏览器与服务器共用）
 
@@ -62,7 +62,8 @@ Occurrence = { scheduleId, date, startMin, endMin }
 3. **once**：日期 = `date` 在窗口内。
 4. 过滤：`date < activeFrom || date > activeTo` 丢弃。
 5. 应用 overrides：命中日期 `skip` → 丢弃该日全部段；`move` → 原日期丢弃、在 `toDate` 增加；`retime` → 当日替换为 startMin/endMin。
-6. 输出升序 Occurrence 列表（用于渲染与冲突判定，不落库——规则修改即时生效）。
+6. **课程总数量（occurrenceLimit，迁移 v4）**：设值后不再整窗展开，而是自日程起始（锚点：activeFrom / weekly 的 weekStart / interval 的 startDate / once 的 date；weekly 无锚点时以查询窗口起点计）沿时间轴推进，**累计“发生 N 天”后截止**（停课/单次跳过不计、同日多时段按 1 天计），仅输出落在窗口内的部分。与 activeFrom/activeTo 为同一约束的两种表达（UI 二选一，互斥）。
+7. 输出升序 Occurrence 列表（用于渲染与冲突判定，不落库——规则修改即时生效）。
 
 边界：跨午夜时长不允许（endMin ≤ 1439）；重叠校验按半开区间 `[start,end)`。
 

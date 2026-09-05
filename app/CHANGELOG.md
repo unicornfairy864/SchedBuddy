@@ -2,6 +2,13 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.53] - 2026-09-05
+
+### Added（弹窗改造 · 第 7 步：生效限制二选一 = 日期范围 / 课程总数量，存库并生效）
+- 「高级 → 生效限制」由勾选式生效范围改为**三档**：不限制 / **日期范围**（原有起止 DateField，含清除与起止颠倒校验、起点日输满跳终点年）/ **课程总数量**（"共 N 天"数字框）；切换自动清空另一方，仅存其一。
+- **数据模型 v4**：`schedules.occurrence_limit INTEGER`（`Schedule.occurrenceLimit`，NULL=不限）+ 服务端读写/导入映射 + 校验（正整数）。
+- **引擎按天计次**：`occurrenceLimit=N` 时自日程起始（activeFrom/weekly 锚点/interval startDate/once date；weekly 无锚点按查询窗口起点）沿时间轴推进，累计发生 N 天后截止；停课/单次跳过不计、同日多时段按 1 天计。引擎自测新增 2 组（共 15 组通过）。
+
 ## [0.2.52] - 2026-09-05
 
 ### Changed（弹窗布局微调 2）

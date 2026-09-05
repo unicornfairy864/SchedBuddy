@@ -34,7 +34,7 @@ export interface SaveResult {
 /** 可编辑提交载荷（服务端忽略 rev/deletedAt/lastWriter 等同步元字段） */
 export type ScheduleDraft = Pick<
   Schedule,
-  'title' | 'notes' | 'type' | 'color' | 'rule' | 'activeFrom' | 'activeTo' | 'overrides'
+  'title' | 'notes' | 'type' | 'color' | 'rule' | 'activeFrom' | 'activeTo' | 'occurrenceLimit' | 'overrides'
 > & { force?: boolean };
 
 export class ApiError extends Error {
