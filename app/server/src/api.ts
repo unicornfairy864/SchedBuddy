@@ -205,8 +205,18 @@ export function makeApi(store: Store) {
         continue;
       }
       const id = raw.id && typeof raw.id === 'string' ? raw.id : newId();
+      const existing = getSchedule(store, id);
       const s = buildCandidate(raw, id);
-      insertSchedule(store, s);
+      if (existing) {
+        // 重复导入：同 id 覆盖并复活（清墓碑、rev+1），避免主键冲突
+        s.createdAt = existing.createdAt;
+        s.rev = (existing.rev ?? 0) + 1;
+        s.lastWriter = 'pc';
+        s.deletedAt = null;
+        updateSchedule(store, s);
+      } else {
+        insertSchedule(store, s);
+      }
       ok.push(s.id);
     }
     if (data.settings && typeof data.settings === 'object') setSettings(store, data.settings);

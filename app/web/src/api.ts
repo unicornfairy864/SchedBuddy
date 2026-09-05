@@ -101,3 +101,26 @@ export async function saveSettings(patch: Record<string, unknown>): Promise<Reco
   const data = await sendJson<{ settings: Record<string, unknown> }>('PUT', '/api/settings', { settings: patch });
   return data.settings;
 }
+
+/* ---------- 全应用数据 导出 / 导入 ---------- */
+
+export interface BackupData {
+  version: string;
+  exportedAt: string;
+  settings: Record<string, unknown>;
+  schedules: Schedule[];
+}
+
+export async function fetchBackup(): Promise<BackupData> {
+  return getJson<BackupData>('/api/export');
+}
+
+export interface ImportResult {
+  ok: number;
+  failed: number;
+  bad: { title?: string; issues: string[] }[];
+}
+
+export async function postImport(data: unknown): Promise<ImportResult> {
+  return sendJson<ImportResult>('POST', '/api/import', data);
+}

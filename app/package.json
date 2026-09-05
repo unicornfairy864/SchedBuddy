@@ -1,6 +1,6 @@
 {
   "name": "schedbuddy",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "description": "SchedBuddy 大学生时间管理：桌面(Electron)+局域网Web双端，单用户日程可视化。",
   "main": "desktop/dist/main.cjs",
@@ -28,10 +28,13 @@
     "dev:web": "npm run dev --workspace web"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/express": "^4.17.21",
     "@types/node": "^22.10.5",
     "concurrently": "^9.1.2",
+    "electron": "^44.2.0",
+    "electron-builder": "^26.15.3",
     "esbuild": "^0.24.2",
     "rimraf": "^6.0.1",
     "tsx": "^4.19.2",

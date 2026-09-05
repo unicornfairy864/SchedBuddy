@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { fetchSettings, saveSettings } from '../api';
+import { fetchSettings, saveSettings, fetchBackup, postImport } from '../api';
 
 interface Props {
   onClose: () => void;
@@ -13,6 +13,8 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
   const [termEnd, setTermEnd] = useState('');
   const [weekCount, setWeekCount] = useState('');
   const [err, setErr] = useState('');
+  const [ioBusy, setIoBusy] = useState(false); // 导出/导入进行中
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchSettings()
@@ -29,11 +31,11 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !busy) onClose();
+      if (e.key === 'Escape' && !busy && !ioBusy) onClose();
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [busy, onClose]);
+  }, [busy, ioBusy, onClose]);
 
   const weekNoRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -65,12 +67,58 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
     }
   };
 
+  // 导出全部数据为 JSON 文件下载
+  const doExport = async () => {
+    setIoBusy(true);
+    try {
+      const data = await fetchBackup();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 16).replace('T', '-').replace(':', '-');
+      a.href = url;
+      a.download = `schedbuddy-backup-${stamp}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      onNotify('已导出全部数据（文件）');
+    } catch (e) {
+      onNotify('导出失败：' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIoBusy(false);
+    }
+  };
+
+  const doImport = async (file: File) => {
+    let data: any;
+    try {
+      data = JSON.parse(await file.text());
+    } catch {
+      onNotify('文件不是有效的 JSON');
+      return;
+    }
+    if (!data || !Array.isArray(data.schedules)) {
+      onNotify('文件缺少 schedules（请使用本应用导出的备份）');
+      return;
+    }
+    setIoBusy(true);
+    try {
+      const res = await postImport(data);
+      const failedNote = res.failed > 0 ? `，失败 ${res.failed} 条` : '';
+      onDone(`导入完成：${res.ok} 条成功${failedNote}（设置已同步）`);
+    } catch (e) {
+      onNotify('导入失败：' + (e instanceof Error ? e.message : String(e)));
+      setIoBusy(false);
+    }
+  };
+
+  const ioIdle = busy || ioBusy;
+
   return (
-    <div className="modal-scrim" onMouseDown={(e) => e.target === e.currentTarget && !busy && onClose()}>
+    <div className="modal-scrim" onMouseDown={(e) => e.target === e.currentTarget && !ioIdle && onClose()}>
       <div className="modal narrow" role="dialog" aria-modal="true" aria-label="设置">
         <header className="modal-head">
           <h2>设置</h2>
-          <button className="icon-btn ghost x" onClick={onClose} disabled={busy} aria-label="关闭">✕</button>
+          <button className="icon-btn ghost x" onClick={onClose} disabled={ioIdle} aria-label="关闭">✕</button>
         </header>
         <div className="modal-body">
           {busy ? (
@@ -92,15 +140,40 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
                   onChange={(e) => setWeekCount(e.target.value)} placeholder="如 16" />
               </label>
               {err && <div className="cf-box err">⚠ {err}</div>}
+
+              {/* 全应用数据：导出 / 导入 */}
+              <div className="fld">
+                <span className="fld-label">数据管理（全应用：日程 + 设置）</span>
+                <div className="range-pair">
+                  <button type="button" className="mini-btn" onClick={doExport} disabled={ioIdle}>
+                    {ioBusy ? '处理中…' : '导出全部数据（文件）'}
+                  </button>
+                  <button type="button" className="mini-btn" onClick={() => fileRef.current?.click()} disabled={ioIdle}>
+                    从文件导入…
+                  </button>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="application/json,.json"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) doImport(f);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
+                <span className="fld-help">导入为合并：同 id 覆盖、其余保留；不会删除当前未在文件中的日程。建议先导出再导入。</span>
+              </div>
             </>
           )}
         </div>
         <footer className="modal-foot">
           <span />
           <span className="foot-actions">
-            <button type="button" className="btn" onClick={onClose} disabled={busy}>取消</button>
-            <button type="button" className="btn primary" onClick={save} disabled={busy}>
-              {busy ? '处理中…' : '保存'}
+            <button type="button" className="btn" onClick={onClose} disabled={ioIdle}>取消</button>
+            <button type="button" className="btn primary" onClick={save} disabled={ioIdle}>
+              {busy || ioBusy ? '处理中…' : '保存'}
             </button>
           </span>
         </footer>
