@@ -12,6 +12,7 @@ import {
   type ScheduleDraft,
   type SummarizedConflict,
 } from '../api';
+import Dropdown from './Dropdown';
 
 /* ---------- 工具 ---------- */
 
@@ -185,10 +186,10 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   const patchInterval = (p: Partial<FormState['interval']>) => setF((prev) => ({ ...prev, interval: { ...prev.interval, ...p } }));
   const patchOnce = (p: Partial<FormState['once']>) => setF((prev) => ({ ...prev, once: { ...prev.once, ...p } }));
 
-  // Esc 关闭
+  // Esc 关闭（自定义下拉展开中时交给下拉自身收起，不关闭弹窗）
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !busy) onClose();
+      if (e.key === 'Escape' && !busy && !(e.target as Element | null)?.closest?.('.dd')) onClose();
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
@@ -432,11 +433,16 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
               <div className="rule-sub">
                 <div className="fld inline">
                   <span className="fld-label">单双周</span>
-                  <select className="sel" value={f.weekly.oddEven} onChange={(e) => toOdd(e.target.value as OddEven)}>
-                    <option value="none">每周都有</option>
-                    <option value="odd">仅单周</option>
-                    <option value="even">仅双周</option>
-                  </select>
+                  <Dropdown
+                    value={f.weekly.oddEven}
+                    ariaLabel="单双周"
+                    options={[
+                      { value: 'none', label: '每周都有' },
+                      { value: 'odd', label: '仅单周' },
+                      { value: 'even', label: '仅双周' },
+                    ]}
+                    onChange={(v) => toOdd(v as OddEven)}
+                  />
                 </div>
                 {f.weekly.oddEven !== 'none' && (
                   <label className="fld inline">

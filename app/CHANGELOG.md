@@ -2,6 +2,12 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.39] - 2026-09-05
+
+### Fixed（第 1 步回炉：单双周下拉改为自绘组件）
+- 原生 `<select>` 展开列表无法跨浏览器自定义样式 → 新增 `Dropdown` 自绘下拉组件（`web/src/components/Dropdown.tsx`）：白底细边触发按钮 + 旋转箭头，展开弹层白底圆角、选项 hover 高亮、当前项主色圆点/加粗、淡入动画；`position:fixed` 锚定按钮，贴近视口底部时自动上翻；点外部/Esc/滚动自动收起。
+- 仅替换「单双周」一处；弹窗 Esc 关闭增加保护（下拉展开时先收起下拉、不关弹窗）。
+
 ## [0.2.38] - 2026-09-05
 
 ### Changed（编辑/新建弹窗改造 · 第 1 步：单双周下拉框样式）
