@@ -2,6 +2,13 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.3] - 2026-09-05
+
+### Changed（本机底栏：局域网访问地址 + 复制）
+- 本机（可写端）页脚由 hover 提示改为**局域网访问地址胶囊**（`局域网访问 http://<LAN-IPv4>:port` + `复制` 按钮，整体居中）；点击复制经剪贴板并 Snackbar 反馈。
+- `GET /api/meta` 新增 `lan` 字段（无局域网地址时为 null）；只读端仍显示 hover/只读提示。
+- 用途：桌面主机/浏览器上可直接查看手机、宿舍机应访问的地址。
+
 ## [0.3.2] - 2026-09-05
 
 ### Added（全应用数据导出 / 导入 UI）

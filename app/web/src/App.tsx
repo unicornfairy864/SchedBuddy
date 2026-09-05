@@ -383,11 +383,30 @@ export default function App() {
       )}
 
       <footer className="app-foot">
-        <span className="tip-hint">
-          {meta?.readOnly
-            ? 'hover 方块查看详情 · 只读模式（请在桌面主机编辑）'
-            : 'hover 方块查看详情 · 移入悬浮窗 →「✎ 编辑」'}
-        </span>
+        {meta?.lan && !meta.readOnly ? (
+          <div className="lan-row">
+            <span className="lan-tag">局域网访问</span>
+            <code className="lan-url">{meta.lan}</code>
+            <button
+              type="button"
+              className="mini-btn lan-copy"
+              onClick={() => {
+                navigator.clipboard
+                  ?.writeText(meta.lan!)
+                  .then(() => showHint('已复制局域网地址'))
+                  .catch(() => showHint('复制失败，请手动复制'));
+              }}
+            >
+              复制
+            </button>
+          </div>
+        ) : (
+          <span className="tip-hint">
+            {meta?.readOnly
+              ? 'hover 方块查看详情 · 只读模式（请在桌面主机编辑）'
+              : 'hover 方块查看详情 · 移入悬浮窗 →「✎ 编辑」'}
+          </span>
+        )}
       </footer>
 
       <div className={hint ? 'snack in' : 'snack'} role="status" aria-live="polite">{hint}</div>

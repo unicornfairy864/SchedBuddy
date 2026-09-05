@@ -4,6 +4,8 @@ export interface Meta {
   version: string;
   readOnly: boolean;
   port: number;
+  /** 局域网访问地址（http://<LAN-IPv4>:port），供本机页脚展示；无局域网地址为 null */
+  lan: string | null;
   termStart: string | null;
   now: string;
 }

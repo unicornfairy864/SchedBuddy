@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from 'express';
+import { networkInterfaces } from 'node:os';
 import { expandAll } from '../../shared/src/expand';
 import { detectConflicts, probeWindowFor } from '../../shared/src/conflict';
 import { validateSchedule } from '../../shared/src/validate';
@@ -37,12 +38,24 @@ export function makeApi(store: Store) {
 
   const settings = () => getSettings(store);
 
+  /** 局域网 IPv4（供页脚展示"其他设备访问地址"） */
+  const lanIp = (): string | null => {
+    for (const addrs of Object.values(networkInterfaces())) {
+      for (const a of addrs ?? []) {
+        if (a.family === 'IPv4' && !a.internal) return a.address;
+      }
+    }
+    return null;
+  };
+
   r.get('/meta', (_req, res) => {
     const s = settings();
+    const ip = lanIp();
     res.json({
       version: typeof __VERSION__ !== 'undefined' ? __VERSION__ : '0.0.0-dev',
       readOnly: !isLoopback(_req),
       port: Number(process.env.SCHEDBUDDY_PORT || 3876),
+      lan: ip ? `http://${ip}:${Number(process.env.SCHEDBUDDY_PORT || 3876)}` : null,
       termStart: s.termStart ?? null,
       now: todayStr(),
     });

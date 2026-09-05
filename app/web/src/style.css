@@ -345,10 +345,22 @@ body {
 
 /* ---------- 页脚 ---------- */
 .app-foot {
-  display: flex; justify-content: space-between; gap: 10px;
+  display: flex; justify-content: center; align-items: center; gap: 10px;
   padding: 8px 20px 12px; color: var(--text2); font-size: 13.5px;
 }
-.tip-hint { text-align: right; }
+.tip-hint { text-align: center; }
+/* 本机底栏：局域网访问地址 + 复制（整体居中） */
+.lan-row {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 6px 5px 12px; border-radius: 999px;
+  background: #f2fbf8; border: 1px solid #c8e8df;
+}
+.lan-tag { color: var(--accent); font-weight: 600; font-size: 13px; white-space: nowrap; }
+.lan-url {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 13px; color: var(--text); user-select: all;
+}
+.lan-copy { flex: none; border-color: var(--accent); color: var(--accent); font-weight: 600; }
 
 /* ---------- Snackbar（轻提示） ---------- */
 .snack {
