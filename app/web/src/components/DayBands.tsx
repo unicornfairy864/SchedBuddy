@@ -60,10 +60,9 @@ interface Props {
   density: 'day' | 'week';
   hoKey: string | null;
   onHover: (info: HoverInfo | null, key: string | null) => void;
-  /** 本机可编辑态：方块点击 → 固定悬浮窗（含「编辑」按钮）、时间区空白处点击快速新建 */
+  /** 本机可编辑态：方块点击 → 固定悬浮窗（含「编辑」按钮） */
   editable?: boolean;
   onPin?: (key: string) => void;
-  onSlotClick?: (date: DateStr, startMin: number) => void;
 }
 
 export default function DayBands({
@@ -75,7 +74,6 @@ export default function DayBands({
   onHover,
   editable,
   onPin,
-  onSlotClick,
 }: Props) {
   const laneH = density === 'day' ? 52 : 31;
   const style = { '--lane-h': `${laneH}px`, '--ruler-h': '24px' } as CSSProperties;
@@ -108,20 +106,6 @@ export default function DayBands({
       { occ: hit.occ, schedule: hit.schedule, x: rect.left + rect.width / 2, y: rect.top },
       key,
     );
-  };
-
-  // 点击时间区空白处：换算该日分钟数 → 快速新建（snap 到 30 分钟）
-  const handleSlot = (e: MouseEvent<HTMLDivElement>, band: Band) => {
-    if (!editable || !onSlotClick) return;
-    const target = e.target as Element;
-    if (target.closest('.sb-block') || target.closest('.ruler')) return;
-    const tr = band.range ?? { start: 0, end: 1440 };
-    const rect = e.currentTarget.getBoundingClientRect();
-    const frac = rect.width > 0 ? (e.clientX - rect.left) / rect.width : 0;
-    const span = tr.end - tr.start;
-    let min = Math.round((tr.start + frac * span) / 30) * 30;
-    min = Math.max(0, Math.min(1439, min));
-    onSlotClick(band.date, min);
   };
 
   // 指针离开容器：若移向悬浮窗本体（去点「编辑」按钮）则保留，否则隐藏
@@ -193,7 +177,7 @@ export default function DayBands({
                 <div className="empty-day">本日无日程 · 全天空闲</div>
               ) : (
                 <>
-                  <div className="lanes" onClick={(e) => handleSlot(e, band)}>
+                  <div className="lanes">
                     {HOURS.map((h) => {
                       const t = h * 60;
                       if (t <= tr.start || t >= tr.end) return null;

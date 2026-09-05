@@ -99,9 +99,6 @@ export default function App() {
     },
     [schedules],
   );
-  const openSlot = useCallback((date: string, startMin: number) => {
-    setEditor({ mode: 'create', prefill: { date, startMin, endMin: Math.min(1440, startMin + 60) } });
-  }, []);
 
   // 当前时间线（每分钟刷新）
   useEffect(() => {
@@ -296,7 +293,6 @@ export default function App() {
               onHover={handleHover}
               editable={editable}
               onPin={handlePin}
-              onSlotClick={openSlot}
             />
             {meta && meta.termStart == null && (
               <div className="notice">

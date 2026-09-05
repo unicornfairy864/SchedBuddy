@@ -458,8 +458,7 @@ body {
 }
 
 /* ===== v0.3 编辑交互 ===== */
-/* 可编辑态：方块可点、空白槽十字光标 */
-.bands.editable .lanes { cursor: crosshair; }
+/* 可编辑态：方块可点 */
 .bands.editable .sb-block { cursor: pointer; }
 .bands.editable .sb-block:hover { box-shadow: 0 6px 16px rgba(31, 63, 95, 0.26), inset 0 0 0 2px rgba(255,255,255,.35); }
 

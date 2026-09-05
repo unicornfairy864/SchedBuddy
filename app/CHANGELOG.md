@@ -2,6 +2,12 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.33] - 2026-09-05
+
+### Removed（时间线上直接添加日程入口）
+- 删除前端“点击时间区空白处 → 快速新建日程”功能（v0.3 曾接入）：`DayBands` 移除空白槽点击与 `onSlotClick`/`handleSlot`，`App` 移除 `openSlot`，去掉时间区十字光标样式。
+- 新建入口仅保留顶栏「＋ 新建」；同步删除 `03-ui-spec.md` §2/§3 中“点击空档”描述与 `项目说明.md` backlog 中的“空档点击快速新建”。
+
 ## [0.2.32] - 2026-09-05
 
 ### Changed（编辑入口移至悬浮窗「✎ 编辑」按钮）
