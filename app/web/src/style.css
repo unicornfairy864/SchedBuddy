@@ -543,17 +543,36 @@ body {
 .modal input.num { width: 96px; }
 .modal input.time { width: 112px; }
 
-/* 复选框行（生效范围启用等） */
+/* 复选框行（生效范围启用等）：自绘复选框 */
 .fld-check {
   display: inline-flex; align-items: center; gap: 9px;
   cursor: pointer; user-select: none; font-size: 14px; color: var(--text);
 }
-.fld-check input { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+.fld-check input {
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; margin: 0;
+  border: 1.5px solid #b9c6d2; border-radius: 6px;
+  background: #fff; cursor: pointer; position: relative;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.fld-check input:hover { border-color: var(--accent); }
+.fld-check input:checked { background: var(--accent); border-color: var(--accent); }
+.fld-check input:checked::after {
+  content: ''; position: absolute; left: 5px; top: 1.5px;
+  width: 5px; height: 9px;
+  border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.fld-check input:focus-visible {
+  outline: none; box-shadow: 0 0 0 3px rgba(62, 175, 155, 0.2);
+}
 
 /* 友好日期输入：年/月/日三段框 + 右侧日历按钮 */
-.datefield { display: inline-flex; align-items: center; gap: 2px; }
-.df-segbox { display: inline-flex; align-items: center; }
-.df-seg {
+.datefield { display: inline-flex; align-items: center; width: fit-content; }
+.df-segbox { display: inline-flex; align-items: center; flex: none; }
+/* 覆盖 .modal input:not([type]) 的 width:100%（特异性更高）：各框仅容纳其位数 */
+.modal .datefield .df-seg {
+  width: auto; flex: none;
   font: inherit; color: var(--text);
   border: 1px solid var(--line); background: #fff;
   border-radius: 10px; padding: 8px 2px;
@@ -561,14 +580,15 @@ body {
   cursor: text; caret-color: var(--accent);
   transition: border-color .15s, box-shadow .15s;
 }
-.df-seg.y { width: 4ch; }
-.df-seg.m, .df-seg.d { width: 2ch; }
-.df-seg:focus {
+.modal .datefield .df-seg.y { width: 4ch; }
+.modal .datefield .df-seg.m,
+.modal .datefield .df-seg.d { width: 2ch; }
+.modal .datefield .df-seg:focus {
   outline: none; border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(62, 175, 155, 0.16);
 }
 .df-suf { color: var(--text2); font-size: 12.5px; margin: 0 2px 0 1px; }
-.df-cal { position: relative; display: inline-flex; margin-left: 4px; }
+.df-cal { position: relative; display: inline-flex; margin-left: 4px; flex: none; }
 .df-cal button {
   display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; border: 1px solid var(--line); background: #fff;

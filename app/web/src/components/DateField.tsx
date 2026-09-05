@@ -47,6 +47,8 @@ export default function DateField({
   defaultDate?: string;
 }) {
   const [segs, setSegs] = useState<[string, string, string]>(() => splitSegs(value));
+  // 实时镜像当前三段值：blur/跳格可能在 React 提交前触发，避免用旧闭包回退
+  const segsRef = useRef<[string, string, string]>(segs);
   const lastRef = useRef(value);
   const refs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   const nativeRef = useRef<HTMLInputElement>(null);
@@ -55,7 +57,9 @@ export default function DateField({
   useEffect(() => {
     if (value === lastRef.current) return;
     lastRef.current = value;
-    setSegs(splitSegs(value));
+    const s = splitSegs(value);
+    segsRef.current = s;
+    setSegs(s);
     if (nativeRef.current) nativeRef.current.value = value;
   }, [value]);
 
@@ -67,8 +71,9 @@ export default function DateField({
 
   const edit = (i: number, raw: string) => {
     const clean = raw.replace(/\D/g, '').slice(0, SEG_MAX[i]);
-    const next = [...segs] as [string, string, string];
+    const next = [...segsRef.current] as [string, string, string];
     next[i] = clean;
+    segsRef.current = next;
     setSegs(next);
     const c = compose(...next);
     if (c !== null) {
@@ -79,6 +84,7 @@ export default function DateField({
       const filled: [string, string, string] = [next[0] || dy, next[1] || dm, next[2] || dd];
       const c2 = compose(...filled);
       if (c2 !== null) {
+        segsRef.current = filled;
         setSegs(filled);
         commit(c2);
       }
@@ -98,11 +104,12 @@ export default function DateField({
     }
   };
 
-  // 失焦：不完整输入回退为最近有效值；全空提交清空
+  // 失焦：不完整输入回退为最近有效值；全空提交清空（用 segsRef，避免未提交的旧状态）
   const blur = () => {
-    const c = compose(...segs);
+    const c = compose(...segsRef.current);
     if (c === null) {
       const prev = splitSegs(lastRef.current);
+      segsRef.current = prev;
       setSegs(prev);
     } else {
       commit(c);
@@ -147,7 +154,9 @@ export default function DateField({
         <input ref={nativeRef} type="date" tabIndex={-1} aria-hidden className="df-native" onChange={(e) => {
           const v = e.target.value;
           lastRef.current = v;
-          setSegs(splitSegs(v));
+          const s = splitSegs(v);
+          segsRef.current = s;
+          setSegs(s);
           onChange(v);
         }} />
       </span>

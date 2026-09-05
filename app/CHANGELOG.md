@@ -2,6 +2,13 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.43] - 2026-09-05
+
+### Fixed（第 2 步修订 2：段宽被通用样式覆盖 / 键入第 4 位后变空 / 复选框样式）
+- **段框宽度**：弹窗通用输入 `width:100%` 特异性高于 `.df-seg` 的 `4ch/2ch`，导致三段平摊整行 → 改为 `.modal .datefield .df-seg`（更高特异性）固定按位数宽、`flex:none`、容器 `width:fit-content`。
+- **键入变空**：输满一段自动跳下一格会同步触发 blur，而 React 状态尚未提交，blur 用旧闭包把刚输入的值回退掉 → 新增 `segsRef` 实时镜像，blur/跳格读取最新值。
+- **复选框自绘样式**：「启用生效范围」复选框改为自绘（白底圆角方框、hover 主色描边、勾选主色底 + 白勾、focus 光环）。
+
 ## [0.2.42] - 2026-09-05
 
 ### Changed（第 2 步修订：生效范围启用勾选 · 框宽按位数 · ＋ 创建自动补齐）
