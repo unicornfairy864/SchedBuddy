@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import avatarUrl from '../../../resources/avatar.jpg';
 
 interface Props {
@@ -11,11 +10,11 @@ interface Props {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
-  onNew: () => void;
   onSettings: () => void;
 }
 
-/** 顶栏：单行一体 —— 左(品牌+版本徽章+周/日切换) / 中(日期导航) / 右(设置+新建；窄屏折叠进 ⋯ 菜单) */
+/** 顶栏：单行一体 —— 左(品牌+版本+周/日切换) / 中(日期导航) / 右(⚙ 设置；只读端仅「只读」徽标)。
+ *  新建入口不在顶栏：由各日带 gutter 的「＋」（周几/上午下午旁）承担。 */
 export default function Header({
   rangeDates,
   rangeWeek,
@@ -26,23 +25,8 @@ export default function Header({
   onPrev,
   onNext,
   onToday,
-  onNew,
   onSettings,
 }: Props) {
-  // 断点档：>900 全按钮单行；≤900 右区收为 ⋯（样式断点 900/720/480 见 03-ui-spec §7）
-  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 900px)').matches);
-  const [moreOpen, setMoreOpen] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 900px)');
-    const onChange = () => {
-      setCompact(mq.matches);
-      setMoreOpen(false);
-    };
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-
   return (
     <header className="topbar">
       <div className="brand">
@@ -77,50 +61,8 @@ export default function Header({
       <div className="right">
         {readOnly ? (
           <span className="ro-badge">只读</span>
-        ) : compact ? (
-          <div className="more">
-            <button
-              className="icon-btn more-btn"
-              title="更多操作"
-              aria-label="更多操作"
-              aria-expanded={moreOpen}
-              onClick={() => setMoreOpen((o) => !o)}
-            >
-              ⋯
-            </button>
-            {moreOpen && (
-              <>
-                <div className="more-scrim" onClick={() => setMoreOpen(false)} />
-                <div className="more-panel" role="menu">
-                  <button
-                    className="more-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setMoreOpen(false);
-                      onNew();
-                    }}
-                  >
-                    ＋ 新建日程
-                  </button>
-                  <button
-                    className="more-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setMoreOpen(false);
-                      onSettings();
-                    }}
-                  >
-                    ⚙ 设置
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
         ) : (
-          <>
-            <button className="icon-btn ghost" title="设置" aria-label="设置" onClick={onSettings}>⚙</button>
-            <button className="btn primary" onClick={onNew}>＋ 新建</button>
-          </>
+          <button className="icon-btn ghost" title="设置" aria-label="设置" onClick={onSettings}>⚙</button>
         )}
       </div>
     </header>

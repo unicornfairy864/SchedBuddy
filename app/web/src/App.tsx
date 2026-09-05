@@ -121,6 +121,13 @@ export default function App() {
     [schedules],
   );
 
+  // 日带「＋」新建：预填该日并给一个默认时段（周/上午 09:00–10:00；日视图下午带 14:00–15:00）；
+  // 弹窗默认规则为固定星期，weekday 自动取该日（ScheduleModal initForm 由 prefill.date 推导）
+  const openCreate = useCallback((date: string, half?: string) => {
+    const startMin = half === '下午' ? 14 * 60 : 9 * 60;
+    setEditor({ mode: 'create', prefill: { date, startMin, endMin: startMin + 60 } });
+  }, []);
+
   // 当前时间线（每分钟刷新）
   useEffect(() => {
     const tick = () => {
@@ -305,7 +312,6 @@ export default function App() {
         onPrev={() => nav(-1)}
         onNext={() => nav(1)}
         onToday={() => setAnchor(today)}
-        onNew={() => setEditor({ mode: 'create', prefill: null })}
         onSettings={() => setSettingsOpen(true)}
       />
 
@@ -329,6 +335,7 @@ export default function App() {
               editable={editable}
               onPin={handlePin}
               leaving={leaving}
+              onAdd={openCreate}
             />
             {meta && meta.termStart == null && (
               <div className="notice">

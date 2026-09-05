@@ -2,6 +2,17 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.2.36] - 2026-09-05
+
+### Changed（新建入口移到各日带 gutter · 顶栏精简）
+- **新建入口改为每条日带的「＋」**（周视图 7 条日带 + 日视图上午/下午半天带各一），按钮位于 gutter「周几 / 上午下午」标签旁；空日带同样可新建；点击即打开新建弹窗并预填该日。
+- 预填规则：默认**固定星期**且 weekday=该日；默认时段 = 周视图/上午 `09:00–10:00`、日视图下午带 `14:00–15:00`（切一次性/隔 N 天仍保留日期）。
+- **顶栏移除「＋ 新建」与窄屏 `⋯` 折叠菜单**（v0.2.23 引入的折叠不再需要）：右操作区只读态仅「只读」徽标、本机态仅 `⚙ 设置`（各断点档常驻）；同步删除 `.more*` 样式并简化响应式档位说明。
+
+### Notes
+- 实现：`Header` 删除 `onNew`/折叠逻辑；`DayBands` 新增 `onAdd(date, half?)`，gutter 内按 `editable && onAdd` 渲染 `.band-add` 小圆钮（`e.stopPropagation`，防触发方块/板面事件）；`App` 新增 `openCreate(date, half)` 按半天带给默认时段构造 `SlotPrefill`；`style.css` 新增 `.gutter-line`/`.band-add`（含 ≤860 微缩）。
+- 只读端不渲染「＋」，写权限口径不变。同步 `03-ui-spec.md` §2/§3/§6/§7 与 `项目说明.md`。
+
 ## [0.2.35] - 2026-09-05
 
 ### Added（删除退场动画 · v0.3 动画清单收尾，对应 `03-ui-spec.md` §5「删除」行）

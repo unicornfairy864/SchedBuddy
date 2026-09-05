@@ -106,27 +106,6 @@ body {
   padding: 4px 11px; border-radius: 999px; border: 1px solid #f3ddb0;
 }
 
-/* 窄屏溢出菜单（⋯） */
-.more { position: relative; display: flex; }
-.more-btn { letter-spacing: 3px; font-size: 19px; position: relative; z-index: 43; }
-.more-scrim { position: fixed; inset: 0; z-index: 41; background: transparent; }
-.more-panel {
-  position: absolute; top: calc(100% + 8px); right: 0; z-index: 42;
-  min-width: 172px; padding: 6px;
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: 12px; box-shadow: var(--shadow);
-  display: flex; flex-direction: column;
-  animation: rise .18s var(--ease) both;
-}
-.more-item {
-  display: flex; align-items: center; gap: 9px;
-  border: 0; background: transparent; text-align: left;
-  padding: 10px 13px; border-radius: 9px;
-  font-size: 15px; color: var(--text); cursor: pointer;
-  transition: background .15s;
-}
-.more-item:hover { background: #f2f7fa; }
-
 /* ---------- 主区：周视图填满屏幕，日视图随内容 ---------- */
 .board-scroll {
   flex: 1; min-height: 0;
@@ -175,6 +154,21 @@ body {
   margin-top: 4px; font-size: 11px; color: #fff; background: var(--accent);
   border-radius: 999px; padding: 2px 9px;
 }
+/* 周几/上午下午 行内新建按钮（仅本机可编辑态渲染） */
+.band-gutter .gutter-line {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; flex-wrap: wrap;
+}
+.band-add {
+  flex: none; width: 24px; height: 24px; border: 0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff;
+  font-size: 16px; line-height: 1; padding: 0; cursor: pointer;
+  box-shadow: 0 2px 6px rgba(62, 175, 155, 0.35);
+  transition: transform .15s var(--ease), background .15s, box-shadow .15s;
+}
+.band-add:hover { background: #2f9b88; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(62, 175, 155, 0.4); }
+.band-add:active { transform: scale(0.9); }
 .band-body {
   flex: 1; min-width: 0;
   position: relative;
@@ -389,7 +383,7 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #b3c2d1; }
 
 /* ===== 响应式断点档（顶栏；板面日带内容断点仍 860，规范见 06 §5 / 03 §7）=====
-   ≤900 紧凑单行（右区 ⚙/＋新建 折叠为 ⋯，JS 阈值同）
+   ≤900 紧凑单行（右区仅 ⚙ 设置；新建走各日带 gutter「＋」）
    ≤720 折两行：行1 品牌｜周/日(居中)｜右区；行2 日期导航居中（3-B 同中轴）
    ≤430 空间不够：先省略日期段(08/31–09/06)，保留 第N周；品牌字号收缩
    <300 极窄：品牌仅 Logo（隐藏 SchedBuddy 与版本号） */
@@ -437,7 +431,6 @@ body {
   .nav .btn { padding: 6px 9px; font-size: 13.5px; }
   .range { font-size: 13px; }
   .range-dates { max-width: 30vw; }
-  .more-panel { min-width: 156px; }
 }
 
 /* 品牌随宽度收缩字号（保持可见，给居中的周/日让位） */
@@ -462,9 +455,11 @@ body {
   .logo { width: 30px; height: 30px; border-radius: 9px; }
 }
 
-/* 板面内容断点（日带 gutter 收窄） */
+/* 板面内容断点（日带 gutter 收窄，新建按钮同步微缩） */
 @media (max-width: 860px) {
   .band-gutter { width: 62px; }
+  .band-gutter .gutter-line { gap: 4px; }
+  .band-add { width: 20px; height: 20px; font-size: 14px; }
 }
 
 /* ===== v0.3 编辑交互 ===== */

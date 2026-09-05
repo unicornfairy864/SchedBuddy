@@ -65,6 +65,8 @@ interface Props {
   onPin?: (key: string) => void;
   /** 正在播放删除退场动画的日程 id（对应块向左塌缩消失，稍后刷新列表） */
   leaving?: string | null;
+  /** 本机可编辑态：日带 gutter「＋」新建（half = 日视图半天带标签：上午/下午） */
+  onAdd?: (date: string, half?: string) => void;
 }
 
 export default function DayBands({
@@ -77,6 +79,7 @@ export default function DayBands({
   editable,
   onPin,
   leaving,
+  onAdd,
 }: Props) {
   const laneH = density === 'day' ? 52 : 31;
   const style = { '--lane-h': `${laneH}px`, '--ruler-h': '24px' } as CSSProperties;
@@ -163,13 +166,45 @@ export default function DayBands({
             <div className="band-gutter">
               {band.tag ? (
                 <>
-                  <span className="half-tag">{band.tag}</span>
+                  <div className="gutter-line">
+                    <span className="half-tag">{band.tag}</span>
+                    {editable && onAdd && (
+                      <button
+                        type="button"
+                        className="band-add"
+                        title={`在 ${band.date} ${band.tag}新建日程`}
+                        aria-label={`在 ${band.date} ${band.tag}新建日程`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAdd(band.date, band.tag);
+                        }}
+                      >
+                        ＋
+                      </button>
+                    )}
+                  </div>
                   <span className="md">{band.date.slice(5).replace('-', '/')}</span>
                   {band.isToday && <span className="today-badge">今天</span>}
                 </>
               ) : (
                 <>
-                  <span className="wd">{weekdayCn(wd)}</span>
+                  <div className="gutter-line">
+                    <span className="wd">{weekdayCn(wd)}</span>
+                    {editable && onAdd && (
+                      <button
+                        type="button"
+                        className="band-add"
+                        title={`在 ${band.date}（${weekdayCn(wd)}）新建日程`}
+                        aria-label={`在 ${band.date}（${weekdayCn(wd)}）新建日程`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAdd(band.date);
+                        }}
+                      >
+                        ＋
+                      </button>
+                    )}
+                  </div>
                   <span className="md">{band.date.slice(5).replace('-', '/')}</span>
                   {band.isToday && <span className="today-badge">今天</span>}
                 </>
