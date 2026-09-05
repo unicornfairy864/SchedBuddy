@@ -181,6 +181,14 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
   const [serverIssues, setServerIssues] = useState<string[]>([]);
   /** 生效范围启用开关（勾选后才显示起止日期；关闭即清空范围） */
   const [rangeOn, setRangeOn] = useState(() => Boolean(initial.schedule?.activeFrom || initial.schedule?.activeTo));
+  /** 「高级」折叠区（单双周+生效范围）：新建默认收起；编辑且带相关设置时自动展开 */
+  const [advOpen, setAdvOpen] = useState(() => {
+    const s = initial.schedule;
+    if (!s) return false;
+    if (s.activeFrom || s.activeTo) return true;
+    const oe = (s.rule as { oddEven?: string | null }).oddEven;
+    return oe != null && oe !== 'none';
+  });
   // 生效范围：起点「日」输满 → 焦点跳到终点「年」
   const activeToWrap = useRef<HTMLSpanElement>(null);
   const focusToYear = () => {
@@ -444,33 +452,7 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
             </div>
           </div>
 
-          {/* 规则明细 */}
-          {f.kind === 'weekly' && (
-            <>
-              <div className="rule-sub">
-                <div className="fld inline">
-                  <span className="fld-label">单双周</span>
-                  <Dropdown
-                    value={f.weekly.oddEven}
-                    ariaLabel="单双周"
-                    options={[
-                      { value: 'none', label: '每周都有' },
-                      { value: 'odd', label: '仅单周' },
-                      { value: 'even', label: '仅双周' },
-                    ]}
-                    onChange={(v) => toOdd(v as OddEven)}
-                  />
-                </div>
-                {f.weekly.oddEven !== 'none' && (
-                  <label className="fld inline">
-                    <span className="fld-label">第 1 周周一</span>
-                    <DateField value={f.weekly.weekStart} ariaLabel="第 1 周周一"
-                      onChange={(v) => patchWeekly({ weekStart: v })} />
-                  </label>
-                )}
-              </div>
-            </>
-          )}
+          {/* 规则明细（单双周已收进下方「高级」区） */}
           {f.kind === 'interval' && (
             <div className="rule-sub">
               <label className="fld inline">
@@ -529,35 +511,74 @@ export default function ScheduleModal({ mode, initial, schedules, termStart, onC
             <button type="button" className="mini-btn add" onClick={addRow}>＋ 添加时段</button>
           </div>
 
-          {/* 生效范围（复选框启用；勾选后才显示起止日期） */}
-          <div className="fld">
-            <label className="fld-check">
-              <input type="checkbox" checked={rangeOn}
-                onChange={(e) => {
-                  const on = e.target.checked;
-                  setRangeOn(on);
-                  if (!on) set({ activeFrom: '', activeTo: '' });
-                }} />
-              <span>启用生效范围</span>
-            </label>
-            {rangeOn && (
-              <>
-                <div className="range-pair">
-                  <DateField value={f.activeFrom} ariaLabel="生效起始" defaultDate={initial.prefill?.date}
-                    onChange={(v) => set({ activeFrom: v })}
-                    onDayDone={focusToYear} />
-                  <i className="dash">至</i>
-                  <span ref={activeToWrap}>
-                    <DateField value={f.activeTo} ariaLabel="生效结束"
-                      onChange={(v) => set({ activeTo: v })} />
-                  </span>
-                  {(f.activeFrom || f.activeTo) && (
-                    <button type="button" className="mini-btn" onClick={() => set({ activeFrom: '', activeTo: '' })}>清除</button>
+          {/* 高级（可折叠）：单双周 + 生效范围，默认收起 */}
+          <div className="adv">
+            <button
+              type="button"
+              className={`adv-head${advOpen ? ' open' : ''}`}
+              aria-expanded={advOpen}
+              onClick={() => setAdvOpen((o) => !o)}
+            >
+              <span>高级</span>
+              <i className="adv-arrow" aria-hidden />
+            </button>
+            <div className={`adv-body${advOpen ? ' open' : ''}`}>
+              <div className="adv-inner">
+                {f.kind === 'weekly' && (
+                  <>
+                    <div className="fld inline">
+                      <span className="fld-label">单双周</span>
+                      <Dropdown
+                        value={f.weekly.oddEven}
+                        ariaLabel="单双周"
+                        options={[
+                          { value: 'none', label: '每周都有' },
+                          { value: 'odd', label: '仅单周' },
+                          { value: 'even', label: '仅双周' },
+                        ]}
+                        onChange={(v) => toOdd(v as OddEven)}
+                      />
+                    </div>
+                    {f.weekly.oddEven !== 'none' && (
+                      <label className="fld inline">
+                        <span className="fld-label">第 1 周周一</span>
+                        <DateField value={f.weekly.weekStart} ariaLabel="第 1 周周一"
+                          onChange={(v) => patchWeekly({ weekStart: v })} />
+                      </label>
+                    )}
+                  </>
+                )}
+                <div className="fld">
+                  <label className="fld-check">
+                    <input type="checkbox" checked={rangeOn}
+                      onChange={(e) => {
+                        const on = e.target.checked;
+                        setRangeOn(on);
+                        if (!on) set({ activeFrom: '', activeTo: '' });
+                      }} />
+                    <span>启用生效范围</span>
+                  </label>
+                  {rangeOn && (
+                    <>
+                      <div className="range-pair">
+                        <DateField value={f.activeFrom} ariaLabel="生效起始" defaultDate={initial.prefill?.date}
+                          onChange={(v) => set({ activeFrom: v })}
+                          onDayDone={focusToYear} />
+                        <i className="dash">至</i>
+                        <span ref={activeToWrap}>
+                          <DateField value={f.activeTo} ariaLabel="生效结束"
+                            onChange={(v) => set({ activeTo: v })} />
+                        </span>
+                        {(f.activeFrom || f.activeTo) && (
+                          <button type="button" className="mini-btn" onClick={() => set({ activeFrom: '', activeTo: '' })}>清除</button>
+                        )}
+                      </div>
+                      {f.activeFrom && f.activeTo && f.activeFrom > f.activeTo && <div className="fld-err">起止颠倒</div>}
+                    </>
                   )}
                 </div>
-                {f.activeFrom && f.activeTo && f.activeFrom > f.activeTo && <div className="fld-err">起止颠倒</div>}
-              </>
-            )}
+              </div>
+            </div>
           </div>
 
           {/* 备注 */}

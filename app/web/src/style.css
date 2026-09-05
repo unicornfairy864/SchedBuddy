@@ -542,8 +542,7 @@ body {
 .modal select { width: auto; }
 .modal input.num { width: 96px; }
 
-/* 复选框行（生效范围启用等）：自绘复选框 */
-.fld-check {
+/* 复选框行（生效范围启用等）：自绘复选框 */.fld-check {
   display: inline-flex; align-items: center; gap: 9px;
   cursor: pointer; user-select: none; font-size: 14px; color: var(--text);
 }
@@ -564,6 +563,42 @@ body {
 }
 .fld-check input:focus-visible {
   outline: none; box-shadow: 0 0 0 3px rgba(62, 175, 155, 0.2);
+}
+
+/* 「高级」可折叠区（单双周 + 生效范围） */
+.adv {
+  border: 1px solid var(--line); border-radius: 12px;
+  background: #fafcfe;
+}
+.adv-head {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; border: 0; background: transparent;
+  padding: 9px 14px; font: inherit; font-size: 14px; font-weight: 600;
+  color: var(--text2); cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.adv-head:hover { color: var(--text); background: #f2f7fa; }
+.adv-arrow {
+  width: 8px; height: 8px; flex: none;
+  border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform .2s var(--ease);
+}
+.adv-head.open .adv-arrow { transform: rotate(-135deg) translateY(-1px); }
+.adv-body {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows .25s var(--ease);
+}
+.adv-body.open { grid-template-rows: 1fr; }
+.adv-inner {
+  overflow: hidden; min-height: 0;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 0 14px;
+}
+/* 展开后放行溢出：单双周自绘下拉弹层不被裁切 */
+.adv-body.open .adv-inner {
+  overflow: visible;
+  padding: 2px 14px 13px;
 }
 
 /* 友好日期输入：年/月/日三段框 + 右侧日历按钮 */
