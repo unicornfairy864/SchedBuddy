@@ -27,12 +27,12 @@ export default function Header({
   onNew,
   onSettings,
 }: Props) {
-  // 断点统一 860px（见 06-dev-conventions §5）
-  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 860px)').matches);
+  // 断点档：>900 全按钮单行；≤900 右区收为 ⋯（样式断点 900/720/480 见 03-ui-spec §7）
+  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 900px)').matches);
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 860px)');
+    const mq = window.matchMedia('(max-width: 900px)');
     const onChange = () => {
       setCompact(mq.matches);
       setMoreOpen(false);
