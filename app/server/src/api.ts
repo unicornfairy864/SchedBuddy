@@ -38,9 +38,20 @@ export function makeApi(store: Store) {
 
   const settings = () => getSettings(store);
 
-  /** 局域网 IPv4（供页脚展示"其他设备访问地址"） */
+  /** 局域网 IPv4（供页脚展示"其他设备访问地址"）。
+   *  注意：必须跳过虚拟网卡（Radmin/VMware/VMnet/vEthernet/WSL 等），否则可能显示 VPN 虚拟地址（如 26.250.x）。 */
   const lanIp = (): string | null => {
-    for (const addrs of Object.values(networkInterfaces())) {
+    const ifaces = networkInterfaces();
+    const isVirtualName = (name: string): boolean =>
+      /radmin|vmnet|vmware|virtual|vethernet|wsl|tap-|tun|zerotier|tailscale/i.test(name);
+    for (const [name, addrs] of Object.entries(ifaces)) {
+      if (isVirtualName(name)) continue;
+      for (const a of addrs ?? []) {
+        if (a.family === 'IPv4' && !a.internal) return a.address;
+      }
+    }
+    // 兜底：实在没有物理网卡时退回任意非回环 IPv4
+    for (const addrs of Object.values(ifaces)) {
       for (const a of addrs ?? []) {
         if (a.family === 'IPv4' && !a.internal) return a.address;
       }

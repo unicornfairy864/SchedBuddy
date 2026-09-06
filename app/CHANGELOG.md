@@ -2,6 +2,12 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.8] - 2026-09-05
+
+### Fixed（局域网地址误显示 VPN 虚拟网卡）
+- 现象：页脚显示 `http://26.250.81.13:3876`（Radmin VPN 虚拟网卡），而真实局域网为 `192.168.43.x`。
+- 修复：选择局域网 IPv4 时**跳过虚拟网卡**（Radmin / VMware / VMnet / vEthernet / WSL / Zerotier / Tailscale 等名称），优先真实 WLAN/以太网；无物理网卡时兜底任意非回环地址。`/api/meta.lan` 与控制台启动日志同规则。
+
 ## [0.3.7] - 2026-09-05
 
 ### Changed（本地/局域网：全站不做缓存）

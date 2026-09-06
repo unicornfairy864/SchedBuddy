@@ -23,7 +23,17 @@ export interface RunningServer {
 }
 
 export function lanIPv4(): string | null {
-  for (const addrs of Object.values(networkInterfaces())) {
+  // 跳过虚拟网卡（Radmin/VMware/VMnet/vEthernet/WSL 等），避免显示 VPN 虚拟地址
+  const isVirtualName = (name: string): boolean =>
+    /radmin|vmnet|vmware|virtual|vethernet|wsl|tap-|tun|zerotier|tailscale/i.test(name);
+  const ifaces = networkInterfaces();
+  for (const [name, addrs] of Object.entries(ifaces)) {
+    if (isVirtualName(name)) continue;
+    for (const a of addrs ?? []) {
+      if (a.family === 'IPv4' && !a.internal) return a.address;
+    }
+  }
+  for (const addrs of Object.values(ifaces)) {
     for (const a of addrs ?? []) {
       if (a.family === 'IPv4' && !a.internal) return a.address;
     }
