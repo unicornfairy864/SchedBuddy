@@ -53,6 +53,8 @@ npm run dist:dir       # 打包 → desktop/release/win-unpacked\SchedBuddy.exe�
 npm start              # Web 模式照常，无需任何切换
 ```
 
+> **桌面打包是按需操作**：常规更新只执行 `npm run build`（shared/server/web）并提交；需要分发新桌面包时才运行 `npm run dist:dir`，不随每次更新自动打包。
+
 - 桌面数据写入系统用户数据目录 `%APPDATA%\SchedBuddy\data`（与仓库内 `app/data` 相互独立）。
 - 产物为解包目录（后端子进程需读取真实文件）；分发时已含随包 `node.exe`。
 - 安装包（NSIS）与自定义图标为后续可选项。

@@ -16,6 +16,12 @@
 | `node scripts/build.mjs [shared\|server\|desktop]` | 按需单包构建 | 缺省 shared+server |
 | `npm run desktop` / `npm run dist:dir` | 桌面开发运行 / 打包 win-unpacked（Electron） | 见「原生模块 ABI 切换」 |
 
+### 桌面打包 = 按需操作（不随常规更新自动执行）
+
+- **常规开发/更新流程**只构建 `shared/server/web`（`npm run build`）并提交；**不会**每次更新都跑 `npm run dist:dir`。
+- `npm run dist:dir`（桌面打包）仅在**用户明确要求/需要分发桌面包**时才执行：Electron 二进制体积大、耗时长，产物与源码版本并不需要同步滚动。
+- 需要新桌面包时：`npm run build && npm run dist:dir` → 产物 `desktop/release/win-unpacked/`（详见 `README.md`「桌面端（Electron）· 环境切换与打包」）。
+
 ### 原生模块（better-sqlite3）—— 单一 Node ABI，无需切换（v0.3.5 起）
 
 - **架构**：后端始终由系统 Node 运行（Web 直跑；桌面壳以随包 `node.exe` 子进程拉起后端，Electron 只渲染窗口），因此 `better-sqlite3` **只编译给系统 Node**，Web 与桌面共用一份。
