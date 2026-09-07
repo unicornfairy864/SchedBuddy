@@ -533,6 +533,15 @@ body {
 /* 字段标题行（标签 + 紧跟其后的行内操作，如 时段 ＋添加时段） */
 .fld-head { display: flex; align-items: center; gap: 10px; }
 .fld-head .mini-btn { flex: none; }
+/* 数据管理（JSON/ICS）：格式标签列等宽居中，按钮组跟随 */
+.dl-list { display: flex; flex-direction: column; gap: 8px; }
+.dl-row {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center; gap: 10px;
+}
+.dl-fmt { text-align: center; font-weight: 600; font-size: 14px; color: var(--text); }
+.dl-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.dl-btns .mini-btn { flex: none; }
 .fld-suffix { font-size: 14px; color: var(--text2); white-space: nowrap; }
 .fld-help { font-size: 13.5px; color: var(--text2); margin: -4px 0 2px; }
 .fld-empty { color: var(--text2); padding: 12px 0; text-align: center; }

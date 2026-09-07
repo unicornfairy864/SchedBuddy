@@ -3,7 +3,9 @@ import { networkInterfaces } from 'node:os';
 import { expandAll } from '../../shared/src/expand';
 import { detectConflicts, probeWindowFor } from '../../shared/src/conflict';
 import { validateSchedule } from '../../shared/src/validate';
-import { todayStr } from '../../shared/src/time';
+import { addDays, todayStr } from '../../shared/src/time';
+import { scheduleToIcs } from '../../shared/src/ics/encode';
+import { parseIcs, eventsToSchedules } from '../../shared/src/ics/parse';
 import type { Occurrence, Schedule } from '../../shared/src/types';
 import {
   getSchedule,
@@ -124,6 +126,27 @@ export function makeApi(store: Store) {
     res.status(400).json({ error: 'invalid', issues });
   }
 
+  /** 通用 upsert（JSON 与 ICS 导入共用）：同 id 覆盖并复活（清墓碑、rev+1） */
+  function upsertRaw(raw: any, preferredId?: string): { ok: boolean; issue?: string } {
+    const issues = validateSchedule(raw);
+    if (issues.length) return { ok: false, issue: issues.join('；') };
+    let id: string;
+    if (preferredId && getSchedule(store, preferredId)) id = preferredId;
+    else id = raw.id && typeof raw.id === 'string' ? raw.id : newId();
+    const existing = getSchedule(store, id);
+    const s = buildCandidate(raw, id);
+    if (existing) {
+      s.createdAt = existing.createdAt;
+      s.rev = (existing.rev ?? 0) + 1;
+      s.lastWriter = 'pc';
+      s.deletedAt = null;
+      updateSchedule(store, s);
+    } else {
+      insertSchedule(store, s);
+    }
+    return { ok: true };
+  }
+
   function checkConflicts(res: Response, all: Schedule[], candidate: Schedule, force: boolean): boolean {
     const s = settings();
     const [from, to] = probeWindowFor(candidate);
@@ -223,28 +246,44 @@ export function makeApi(store: Store) {
     const ok: string[] = [];
     const bad: { title?: string; issues: string[] }[] = [];
     for (const raw of data.schedules) {
-      const issues = validateSchedule(raw);
-      if (issues.length) {
-        bad.push({ title: raw?.title, issues });
-        continue;
-      }
-      const id = raw.id && typeof raw.id === 'string' ? raw.id : newId();
-      const existing = getSchedule(store, id);
-      const s = buildCandidate(raw, id);
-      if (existing) {
-        // 重复导入：同 id 覆盖并复活（清墓碑、rev+1），避免主键冲突
-        s.createdAt = existing.createdAt;
-        s.rev = (existing.rev ?? 0) + 1;
-        s.lastWriter = 'pc';
-        s.deletedAt = null;
-        updateSchedule(store, s);
-      } else {
-        insertSchedule(store, s);
-      }
-      ok.push(s.id);
+      const r = upsertRaw(raw, raw.id && typeof raw.id === 'string' ? raw.id : undefined);
+      if (r.ok) ok.push(raw.id ?? '');
+      else bad.push({ title: raw?.title, issues: [r.issue!] });
     }
     if (data.settings && typeof data.settings === 'object') setSettings(store, data.settings);
     res.json({ ok: ok.length, failed: bad.length, bad });
+  });
+
+  /* ---------- iCalendar（RFC 5545 / 6868，见 docs/09） ---------- */
+
+  r.get('/export.ics', (_req, res) => {
+    const q = String(_req.query.from || '');
+    const from = /^\d{4}-\d{2}-\d{2}$/.test(q) ? q : todayStr();
+    const toRaw = String(_req.query.to || '');
+    const to = /^\d{4}-\d{2}-\d{2}$/.test(toRaw) ? toRaw : addDays(from, 365);
+    const s = settings();
+    const ics = scheduleToIcs(listSchedules(store), { from, to, termStart: s.termStart ?? null });
+    res.setHeader('Content-Disposition', `attachment; filename="schedbuddy-${from}.ics"`);
+    res.type('text/calendar; charset=utf-8');
+    res.send(ics);
+  });
+
+  r.post('/import.ics', writeGuard, (req, res) => {
+    const text = String(req.body?.text ?? '');
+    if (!text.includes('BEGIN:VCALENDAR')) {
+      return res.status(400).json({ error: 'invalid', message: '不是有效的 iCalendar 文本' });
+    }
+    const { events, ignored } = parseIcs(text);
+    const rebuilt = eventsToSchedules(events);
+    const bad: { title?: string; issues: string[] }[] = [];
+    let okCount = 0;
+    for (const sched of rebuilt.schedules) {
+      const refId = (sched as any).refId && getSchedule(store, (sched as any).refId) ? (sched as any).refId : undefined;
+      const r = upsertRaw(sched, refId);
+      if (r.ok) okCount++;
+      else bad.push({ title: sched.title, issues: [r.issue!] });
+    }
+    res.json({ ok: okCount, failed: bad.length, bad, ignored: [...ignored, ...rebuilt.ignored] });
   });
 
   return r;

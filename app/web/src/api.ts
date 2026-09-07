@@ -126,3 +126,25 @@ export interface ImportResult {
 export async function postImport(data: unknown): Promise<ImportResult> {
   return sendJson<ImportResult>('POST', '/api/import', data);
 }
+
+/* ---------- iCalendar（RFC 5545，见 docs/09） ---------- */
+
+export async function fetchIcs(from?: string, to?: string): Promise<string> {
+  const q = new URLSearchParams();
+  if (from) q.set('from', from);
+  if (to) q.set('to', to);
+  const res = await fetch(`/api/export.ics?${q.toString()}`);
+  if (!res.ok) throw new ApiError(res.status, await safeJson(res));
+  return res.text();
+}
+
+export interface IcsImportResult {
+  ok: number;
+  failed: number;
+  bad: { title?: string; issues: string[] }[];
+  ignored: string[];
+}
+
+export async function postIcsImport(text: string): Promise<IcsImportResult> {
+  return sendJson<IcsImportResult>('POST', '/api/import.ics', { text });
+}

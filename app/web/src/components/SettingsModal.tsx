@@ -1,10 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { fetchSettings, saveSettings, fetchBackup, postImport } from '../api';
+import { fetchSettings, saveSettings, fetchBackup, postImport, fetchIcs, postIcsImport } from '../api';
 
 interface Props {
   onClose: () => void;
   onDone: (msg: string) => void;
   onNotify: (msg: string) => void;
+}
+
+function downloadText(filename: string, text: string) {
+  const blob = new Blob([text], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
@@ -13,8 +23,9 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
   const [termEnd, setTermEnd] = useState('');
   const [weekCount, setWeekCount] = useState('');
   const [err, setErr] = useState('');
-  const [ioBusy, setIoBusy] = useState(false); // 导出/导入进行中
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [ioBusy, setIoBusy] = useState(false);
+  const jsonFileRef = useRef<HTMLInputElement>(null);
+  const icsFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchSettings()
@@ -67,20 +78,15 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
     }
   };
 
-  // 导出全部数据为 JSON 文件下载
-  const doExport = async () => {
+  const stamp = () => new Date().toISOString().slice(0, 16).replace('T', '-').replace(':', '-');
+
+  /* ---------- JSON 导出 / 导入 ---------- */
+  const exportJson = async () => {
     setIoBusy(true);
     try {
       const data = await fetchBackup();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const stamp = new Date().toISOString().slice(0, 16).replace('T', '-').replace(':', '-');
-      a.href = url;
-      a.download = `schedbuddy-backup-${stamp}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      onNotify('已导出全部数据（文件）');
+      downloadText(`schedbuddy-backup-${stamp()}.json`, JSON.stringify(data, null, 2));
+      onNotify('已导出 JSON 数据');
     } catch (e) {
       onNotify('导出失败：' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -88,7 +94,7 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
     }
   };
 
-  const doImport = async (file: File) => {
+  const importJson = async (file: File) => {
     let data: any;
     try {
       data = JSON.parse(await file.text());
@@ -97,16 +103,52 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
       return;
     }
     if (!data || !Array.isArray(data.schedules)) {
-      onNotify('文件缺少 schedules（请使用本应用导出的备份）');
+      onNotify('JSON 文件缺少 schedules（请使用本应用导出的备份）');
       return;
     }
     setIoBusy(true);
     try {
       const res = await postImport(data);
-      const failedNote = res.failed > 0 ? `，失败 ${res.failed} 条` : '';
-      onDone(`导入完成：${res.ok} 条成功${failedNote}（设置已同步）`);
+      const fail = res.failed > 0 ? `，失败 ${res.failed} 条` : '';
+      onDone(`JSON 导入完成：${res.ok} 条成功${fail}（设置已同步）`);
     } catch (e) {
       onNotify('导入失败：' + (e instanceof Error ? e.message : String(e)));
+      setIoBusy(false);
+    }
+  };
+
+  /* ---------- iCalendar 导出 / 导入 ---------- */
+  const exportIcs = async () => {
+    setIoBusy(true);
+    try {
+      const ics = await fetchIcs();
+      downloadText(`schedbuddy-${stamp().slice(0, 10)}.ics`, ics);
+      onNotify('已导出 ICS 文件');
+    } catch (e) {
+      onNotify('导出失败：' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIoBusy(false);
+    }
+  };
+
+  const importIcs = async (file: File) => {
+    let text = '';
+    try {
+      text = await file.text();
+    } catch {
+      onNotify('读取文件失败');
+      return;
+    }
+    setIoBusy(true);
+    try {
+      const res = await postIcsImport(text);
+      const bits: string[] = [`成功 ${res.ok} 条`];
+      if (res.failed > 0) bits.push(`失败 ${res.failed} 条`);
+      if (res.ignored.length) bits.push(`忽略 ${res.ignored.length} 项`);
+      onDone(`ICS 导入完成：${bits.join('，')}`);
+    } catch (e) {
+      onNotify('导入失败：' + (e instanceof Error ? e.message : String(e)));
+    } finally {
       setIoBusy(false);
     }
   };
@@ -141,29 +183,32 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
               </label>
               {err && <div className="cf-box err">⚠ {err}</div>}
 
-              {/* 全应用数据：导出 / 导入 */}
+              {/* 数据管理：JSON / ICS 两行，格式标签列等宽居中 */}
               <div className="fld">
-                <span className="fld-label">数据管理（全应用：日程 + 设置）</span>
-                <div className="range-pair">
-                  <button type="button" className="mini-btn" onClick={doExport} disabled={ioIdle}>
-                    {ioBusy ? '处理中…' : '导出全部数据（文件）'}
-                  </button>
-                  <button type="button" className="mini-btn" onClick={() => fileRef.current?.click()} disabled={ioIdle}>
-                    从文件导入…
-                  </button>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="application/json,.json"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) doImport(f);
-                      e.target.value = '';
-                    }}
-                  />
+                <span className="fld-label">数据管理（日程 + 设置）</span>
+                <div className="dl-list">
+                  <div className="dl-row">
+                    <span className="dl-fmt">JSON 文件</span>
+                    <span className="dl-btns">
+                      <button type="button" className="mini-btn" onClick={exportJson} disabled={ioIdle}>导出数据</button>
+                      <button type="button" className="mini-btn" onClick={() => jsonFileRef.current?.click()} disabled={ioIdle}>从文件导入…</button>
+                    </span>
+                  </div>
+                  <div className="dl-row">
+                    <span className="dl-fmt">ICS 文件</span>
+                    <span className="dl-btns">
+                      <button type="button" className="mini-btn" onClick={exportIcs} disabled={ioIdle}>导出数据</button>
+                      <button type="button" className="mini-btn" onClick={() => icsFileRef.current?.click()} disabled={ioIdle}>从文件导入…</button>
+                    </span>
+                  </div>
                 </div>
-                <span className="fld-help">导入为合并：同 id 覆盖、其余保留；不会删除当前未在文件中的日程。建议先导出再导入。</span>
+                <span className="fld-help">
+                  JSON 可完整往返（同 id 覆盖）；ICS 兼容 Google/Outlook 日历（浮动时间；不支持子集导入时忽略并报告，见 docs/09）。导入均为合并式。
+                </span>
+                <input ref={jsonFileRef} type="file" accept=".json,application/json" style={{ display: 'none' }}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f); e.target.value = ''; }} />
+                <input ref={icsFileRef} type="file" accept=".ics,text/calendar" style={{ display: 'none' }}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) importIcs(f); e.target.value = ''; }} />
               </div>
             </>
           )}

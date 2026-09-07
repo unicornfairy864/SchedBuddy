@@ -144,6 +144,8 @@ export interface RebuiltSchedule {
   overrides: any[];
   /** 来源 uid / line，供报告 */
   sources: string[];
+  /** X-SCHEDBUDDY-GROUP 为合法 UUID 时的日程 id（用于覆盖式导入） */
+  refId?: string | null;
 }
 
 /** 把解析出的事件合并重建为 SchedBuddy 日程（尽力而为；无法推断的进 ignored） */
@@ -157,8 +159,10 @@ export function eventsToSchedules(events: IcsEvent[]): { schedules: RebuiltSched
   }
   const schedules: RebuiltSchedule[] = [];
   const ignored: string[] = [];
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   for (const [, evs] of groups) {
     const rep = evs[0];
+    const refId = rep.group && uuidRe.test(rep.group) ? rep.group : null;
     const color = rep.color && /^#[0-9a-fA-F]{6}$/.test(rep.color) ? rep.color : '#4A90E2';
     const sources = evs.map((e) => `${e.uid}(${e.line})`);
 
@@ -212,7 +216,7 @@ export function eventsToSchedules(events: IcsEvent[]): { schedules: RebuiltSched
       };
       schedules.push({
         title: rep.summary, notes: rep.description, color, type: 'specific',
-        rule, activeFrom, activeTo, occurrenceLimit: null, overrides, sources,
+        rule, activeFrom, activeTo, occurrenceLimit: null, overrides, sources, refId,
       });
       continue;
     }
@@ -226,7 +230,7 @@ export function eventsToSchedules(events: IcsEvent[]): { schedules: RebuiltSched
       schedules.push({
         title: rep.summary, notes: rep.description, color, type: 'specific',
         rule: { kind: 'interval', startDate, everyNDays: n, times },
-        activeFrom: null, activeTo, occurrenceLimit: null, overrides: [], sources,
+        activeFrom: null, activeTo, occurrenceLimit: null, overrides: [], sources, refId,
       });
       continue;
     }
@@ -240,7 +244,7 @@ export function eventsToSchedules(events: IcsEvent[]): { schedules: RebuiltSched
           kind: 'once', date: date0,
           times: evs.map((e) => ({ startMin: e.start.minutes, endMin: e.end.minutes })).sort((a, b) => a.startMin - b.startMin),
         },
-        activeFrom: null, activeTo: null, occurrenceLimit: null, overrides: [], sources,
+        activeFrom: null, activeTo: null, occurrenceLimit: null, overrides: [], sources, refId,
       });
       continue;
     }

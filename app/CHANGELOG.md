@@ -2,6 +2,13 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.10] - 2026-09-06
+
+### Added（iCalendar 接线：server 端点 + 数据管理 UI）
+- 设置 → 数据管理改为**两行分组**：`JSON 文件` 与 `ICS 文件`（格式标签列等宽居中），各带「导出数据 / 从文件导入…」。
+- server：`GET /api/export.ics?from=&to=`（缺省今天起 365 天，text/calendar 下载）；`POST /api/import.ics`（合并导入：支持子集重建 + 忽略清单 + 失败明细；同 X-GROUP(UUID) 覆盖）。
+- JSON 导出按钮文案改为「导出数据」；.ics 文件：`schedbuddy-YYYY-MM-DD.ics`。
+
 ## [0.3.9] - 2026-09-06
 
 ### Added（iCalendar 对接 · A1 RFC 5545 + A2 RFC 6868）
