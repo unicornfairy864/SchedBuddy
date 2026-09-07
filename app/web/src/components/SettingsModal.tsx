@@ -1,5 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { fetchSettings, saveSettings, fetchBackup, postImport, fetchIcs, postIcsImport } from '../api';
+import {
+  fetchSettings,
+  saveSettings,
+  fetchBackup,
+  postImport,
+  fetchIcs,
+  postIcsImport,
+  createPairPin,
+  fetchDevices,
+  removeDevice,
+  type PairedDevice,
+  type PinResult,
+} from '../api';
 
 interface Props {
   onClose: () => void;
@@ -26,6 +38,8 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
   const [ioBusy, setIoBusy] = useState(false);
   const jsonFileRef = useRef<HTMLInputElement>(null);
   const icsFileRef = useRef<HTMLInputElement>(null);
+  const [pin, setPin] = useState<PinResult | null>(null);
+  const [devices, setDevices] = useState<PairedDevice[]>([]);
 
   useEffect(() => {
     fetchSettings()
@@ -37,6 +51,7 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
       })
       .catch(() => onNotify('读取设置失败'))
       .finally(() => setBusy(false));
+    loadDevices().catch(() => onNotify('读取配对设备失败'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -155,6 +170,36 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
 
   const ioIdle = busy || ioBusy;
 
+  /* ---------- 设备配对（Android App，v0.4） ---------- */
+  const loadDevices = async () => {
+    setDevices(await fetchDevices());
+  };
+  const genPin = async () => {
+    setIoBusy(true);
+    try {
+      setPin(await createPairPin());
+      onNotify('已生成配对 PIN（10 分钟内有效，单次使用）');
+    } catch (e) {
+      onNotify('生成 PIN 失败：' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIoBusy(false);
+    }
+  };
+  const revoke = async (deviceId: string, name: string) => {
+    if (!window.confirm(`撤销设备「${name}」？其 token 将立即失效。`)) return;
+    setIoBusy(true);
+    try {
+      await removeDevice(deviceId);
+      setPin(null);
+      await loadDevices();
+      onDone('已撤销设备');
+    } catch (e) {
+      onNotify('撤销失败：' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIoBusy(false);
+    }
+  };
+
   return (
     <div className="modal-scrim" onMouseDown={(e) => e.target === e.currentTarget && !ioIdle && onClose()}>
       <div className="modal narrow" role="dialog" aria-modal="true" aria-label="设置">
@@ -209,6 +254,46 @@ export default function SettingsModal({ onClose, onDone, onNotify }: Props) {
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f); e.target.value = ''; }} />
                 <input ref={icsFileRef} type="file" accept=".ics,text/calendar" style={{ display: 'none' }}
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) importIcs(f); e.target.value = ''; }} />
+              </div>
+
+              {/* 设备配对（Android App，v0.4）：PIN 一次配对 → App 获得写权 */}
+              <div className="fld">
+                <span className="fld-label">移动设备配对（Android App）</span>
+                <div className="dl-list">
+                  <div className="dl-row">
+                    <span className="dl-fmt">配对码</span>
+                    <span className="dl-btns">
+                      <button type="button" className="mini-btn" onClick={genPin} disabled={ioIdle}>
+                        {pin ? '重新生成' : '生成配对 PIN'}
+                      </button>
+                    </span>
+                  </div>
+                </div>
+                {pin && (
+                  <div className="pin-box">
+                    <span className="pin-digits">{pin.pin}</span>
+                    <span className="pin-hint">
+                      有效期至{' '}
+                      {new Date(pin.expiresAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} · 单次使用
+                    </span>
+                  </div>
+                )}
+                {devices.length > 0 && (
+                  <div className="dev-list">
+                    {devices.map((d) => (
+                      <div className="dev-row" key={d.deviceId}>
+                        <span className="dev-name">{d.name}</span>
+                        <span className="dev-id">{(d.deviceId || '').slice(0, 20)}…</span>
+                        <button type="button" className="mini-btn danger" onClick={() => revoke(d.deviceId, d.name)} disabled={ioIdle}>
+                          撤销
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <span className="fld-help">
+                  在手机 App「主机设置 → 配对」输入上方 PIN 完成配对；配对后 App 获得写入权限（读取保持公开）。
+                </span>
               </div>
             </>
           )}

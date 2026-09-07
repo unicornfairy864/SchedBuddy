@@ -55,3 +55,35 @@ export function parseHostInput(input: string): HostConfig | null {
 export function baseUrlOf(cfg: HostConfig): string {
   return `http://${cfg.host}:${cfg.port}`;
 }
+
+/* ---------- 配对凭证（0.4.3：/api/pair 换发的设备 token） ---------- */
+
+const DEVICE_KEY = 'schedbuddy:device:v1';
+
+export interface PairedDevice {
+  deviceId: string;
+  token: string;
+  name: string;
+}
+
+export async function loadDevice(): Promise<PairedDevice | null> {
+  try {
+    const raw = await AsyncStorage.getItem(DEVICE_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Partial<PairedDevice>;
+    if (typeof d.deviceId === 'string' && typeof d.token === 'string') {
+      return { deviceId: d.deviceId, token: d.token, name: d.name ?? '' };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveDevice(d: PairedDevice): Promise<void> {
+  await AsyncStorage.setItem(DEVICE_KEY, JSON.stringify(d));
+}
+
+export async function clearDevice(): Promise<void> {
+  await AsyncStorage.removeItem(DEVICE_KEY);
+}

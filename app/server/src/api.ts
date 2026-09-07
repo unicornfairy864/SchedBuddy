@@ -8,16 +8,22 @@ import { scheduleToIcs } from '../../shared/src/ics/encode';
 import { parseIcs, eventsToSchedules } from '../../shared/src/ics/parse';
 import type { Occurrence, Schedule } from '../../shared/src/types';
 import {
+  deleteDevice,
+  findDeviceByToken,
   getSchedule,
   getSettings,
+  insertDevice,
   insertSchedule,
+  listDevices,
   listSchedules,
   newId,
   setSettings,
   softDeleteSchedule,
+  touchDevice,
   updateSchedule,
   type Store,
 } from './db';
+import { consumePin, createPin, newDeviceToken } from './pairing';
 
 declare const __VERSION__: string;
 
@@ -30,13 +36,61 @@ export function makeApi(store: Store) {
     return clean === '127.0.0.1' || clean === '::1' || clean === 'localhost';
   };
 
+  /**
+   * 写权限判定（v0.4 起）：回环地址（桌面主机）或 携带有效设备 token（已 PIN 配对的 App）。
+   * 未配对 LAN 客户端（含手机浏览器）→ 403 只读；带无效 token → 401。
+   */
+  const bearerToken = (req: Request): string | null => {
+    const h = req.headers.authorization;
+    if (!h) return null;
+    const m = /^Bearer\s+(.+)$/i.exec(h);
+    return m ? m[1].trim() : '';
+  };
+
+  type Writer =
+    | { kind: 'loopback' }
+    | { kind: 'device'; deviceId: string }
+    | { kind: 'unauthorized' }
+    | { kind: 'none' };
+
+  const writerOf = (req: Request): Writer => {
+    if (isLoopback(req)) return { kind: 'loopback' };
+    const tok = bearerToken(req);
+    if (tok == null) return { kind: 'none' };
+    const dev = tok ? findDeviceByToken(store, tok) : null;
+    if (!dev) return { kind: 'unauthorized' };
+    touchDevice(store, dev.deviceId);
+    return { kind: 'device', deviceId: dev.deviceId };
+  };
+
   const writeGuard = (req: Request, res: Response, next: () => void) => {
-    if (!isLoopback(req)) {
-      res.status(403).json({ error: 'readonly', message: '仅桌面主机（本机）可修改日程；局域网客户端为只读。' });
+    const w = writerOf(req);
+    if (w.kind === 'loopback') {
+      res.locals.writer = 'pc';
+      return next();
+    }
+    if (w.kind === 'device') {
+      res.locals.writer = w.deviceId;
+      return next();
+    }
+    if (w.kind === 'unauthorized') {
+      res.status(401).json({ error: 'unauthorized', message: '设备 token 无效或已被撤销' });
       return;
     }
+    res.status(403).json({ error: 'readonly', message: '仅桌面主机或已配对设备可写；局域网客户端为只读。' });
+  };
+
+  /** 仅桌面主机（回环）可用（生成 PIN / 管理设备） */
+  const loopbackOnly = (req: Request, res: Response, next: () => void) => {
+    if (!isLoopback(req)) {
+      res.status(403).json({ error: 'readonly', message: '仅桌面主机（本机）可执行此操作。' });
+      return;
+    }
+    res.locals.writer = 'pc';
     next();
   };
+
+  const writer = (res: Response): string => res.locals.writer ?? 'pc';
 
   const settings = () => getSettings(store);
 
@@ -127,7 +181,7 @@ export function makeApi(store: Store) {
   }
 
   /** 通用 upsert（JSON 与 ICS 导入共用）：同 id 覆盖并复活（清墓碑、rev+1） */
-  function upsertRaw(raw: any, preferredId?: string): { ok: boolean; issue?: string } {
+  function upsertRaw(raw: any, preferredId?: string, writerId = 'pc'): { ok: boolean; issue?: string } {
     const issues = validateSchedule(raw);
     if (issues.length) return { ok: false, issue: issues.join('；') };
     let id: string;
@@ -138,10 +192,11 @@ export function makeApi(store: Store) {
     if (existing) {
       s.createdAt = existing.createdAt;
       s.rev = (existing.rev ?? 0) + 1;
-      s.lastWriter = 'pc';
+      s.lastWriter = writerId;
       s.deletedAt = null;
       updateSchedule(store, s);
     } else {
+      s.lastWriter = writerId;
       insertSchedule(store, s);
     }
     return { ok: true };
@@ -170,6 +225,7 @@ export function makeApi(store: Store) {
     const issues = validateSchedule(body);
     if (issues.length) return rejectIssues(res, issues);
     const candidate = buildCandidate(body, newId());
+    candidate.lastWriter = writer(res);
     const all = listSchedules(store);
     if (!checkConflicts(res, all, candidate, body.force === true)) return;
     insertSchedule(store, candidate);
@@ -184,9 +240,9 @@ export function makeApi(store: Store) {
     if (issues.length) return rejectIssues(res, issues);
     const candidate = buildCandidate({ ...existing, ...body }, existing.id);
     candidate.createdAt = existing.createdAt;
-    // 同步元字段服务端维护：rev 在既有值上 +1，lastWriter=本机（'pc'），保存即视为在册
+    // 同步元字段服务端维护：rev 在既有值上 +1，lastWriter=写者（'pc' 或设备 id），保存即视为在册
     candidate.rev = (existing.rev ?? 0) + 1;
-    candidate.lastWriter = 'pc';
+    candidate.lastWriter = writer(res);
     candidate.deletedAt = null;
     const all = listSchedules(store);
     if (!checkConflicts(res, all, candidate, body.force === true)) return;
@@ -196,7 +252,7 @@ export function makeApi(store: Store) {
 
   r.delete('/schedules/:id', writeGuard, (req, res) => {
     // v0.3：软删除（置 deleted_at 墓碑并 rev+1，删除可随同步传播）；已删除/不存在 → 404
-    if (softDeleteSchedule(store, req.params.id, 'pc')) res.json({ ok: true, deleted: true });
+    if (softDeleteSchedule(store, req.params.id, writer(res))) res.json({ ok: true, deleted: true });
     else res.status(404).json({ error: 'notfound' });
   });
 
@@ -225,7 +281,7 @@ export function makeApi(store: Store) {
     if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
       return res.status(400).json({ error: 'invalid', message: 'body.settings 须为对象' });
     }
-    setSettings(store, patch);
+    setSettings(store, patch, writer(res));
     res.json({ settings: getSettings(store) });
   });
 
@@ -246,11 +302,11 @@ export function makeApi(store: Store) {
     const ok: string[] = [];
     const bad: { title?: string; issues: string[] }[] = [];
     for (const raw of data.schedules) {
-      const r = upsertRaw(raw, raw.id && typeof raw.id === 'string' ? raw.id : undefined);
+      const r = upsertRaw(raw, raw.id && typeof raw.id === 'string' ? raw.id : undefined, writer(res));
       if (r.ok) ok.push(raw.id ?? '');
       else bad.push({ title: raw?.title, issues: [r.issue!] });
     }
-    if (data.settings && typeof data.settings === 'object') setSettings(store, data.settings);
+    if (data.settings && typeof data.settings === 'object') setSettings(store, data.settings, writer(res));
     res.json({ ok: ok.length, failed: bad.length, bad });
   });
 
@@ -279,11 +335,44 @@ export function makeApi(store: Store) {
     let okCount = 0;
     for (const sched of rebuilt.schedules) {
       const refId = (sched as any).refId && getSchedule(store, (sched as any).refId) ? (sched as any).refId : undefined;
-      const r = upsertRaw(sched, refId);
+      const r = upsertRaw(sched, refId, writer(res));
       if (r.ok) okCount++;
       else bad.push({ title: sched.title, issues: [r.issue!] });
     }
     res.json({ ok: okCount, failed: bad.length, bad, ignored: [...ignored, ...rebuilt.ignored] });
+  });
+
+  /* ---------- 设备配对（v0.4） ---------- */
+
+  /** 生成一次性配对 PIN（仅本机；单次、10 分钟有效，服务重启作废） */
+  r.post('/pin', loopbackOnly, (_req, res) => {
+    const { pin, expiresAt } = createPin();
+    res.json({ pin, expiresAt });
+  });
+
+  /** PIN 配对换发设备 token（局域网可用）：body { pin, name? } → 201 { deviceId, token } */
+  r.post('/pair', (req, res) => {
+    const pin = String(req.body?.pin ?? '').trim();
+    if (!pin || !consumePin(pin)) {
+      return res.status(403).json({ error: 'badpin', message: '配对 PIN 错误或已过期' });
+    }
+    const now = new Date().toISOString();
+    const deviceId = `sb-${newId()}`;
+    const token = newDeviceToken();
+    const name = String(req.body?.name ?? '').trim() || 'Android 设备';
+    insertDevice(store, { deviceId, name, token, createdAt: now, lastSeenAt: null });
+    res.status(201).json({ deviceId, token });
+  });
+
+  /** 已配设备列表（仅本机；不返回 token） */
+  r.get('/devices', loopbackOnly, (_req, res) => {
+    res.json({ devices: listDevices(store) });
+  });
+
+  /** 撤销设备（仅本机；token 随即失效） */
+  r.delete('/devices/:deviceId', loopbackOnly, (req, res) => {
+    if (deleteDevice(store, req.params.deviceId)) res.json({ ok: true, deleted: true });
+    else res.status(404).json({ error: 'notfound' });
   });
 
   return r;

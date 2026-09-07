@@ -148,3 +148,31 @@ export interface IcsImportResult {
 export async function postIcsImport(text: string): Promise<IcsImportResult> {
   return sendJson<IcsImportResult>('POST', '/api/import.ics', { text });
 }
+
+/* ---------- 设备配对（v0.4） ---------- */
+
+export interface PinResult {
+  pin: string;
+  expiresAt: string;
+}
+
+export interface PairedDevice {
+  deviceId: string;
+  name: string;
+  createdAt: string;
+  lastSeenAt: string | null;
+}
+
+/** 生成一次性配对 PIN（仅本机可用） */
+export async function createPairPin(): Promise<PinResult> {
+  return sendJson<PinResult>('POST', '/api/pin');
+}
+
+export async function fetchDevices(): Promise<PairedDevice[]> {
+  const d = await getJson<{ devices: PairedDevice[] }>('/api/devices');
+  return d.devices;
+}
+
+export async function removeDevice(deviceId: string): Promise<void> {
+  await sendJson<{ ok: boolean }>('DELETE', `/api/devices/${deviceId}`);
+}

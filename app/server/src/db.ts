@@ -47,6 +47,14 @@ const MIGRATIONS = [
    UPDATE settings SET rev = 1;`,
   // v4: 课程总数量（occurrence_limit，按天计次，见 docs/02；NULL = 不限）。
   `ALTER TABLE schedules ADD COLUMN occurrence_limit INTEGER;`,
+  // v5: 配对设备（v0.4 /api/pair 换发；长期 token；撤销 = 物理删除，不参与 rev 同步体系）。
+  `CREATE TABLE IF NOT EXISTS devices (
+     device_id    TEXT PRIMARY KEY,
+     name         TEXT NOT NULL DEFAULT '',
+     token        TEXT NOT NULL UNIQUE,
+     created_at   TEXT NOT NULL,
+     last_seen_at TEXT
+   );`,
 ];
 
 export function openStore(dataDir: string): Store {
@@ -203,6 +211,63 @@ export function setSettings(store: Store, patch: Settings, writer = 'pc'): void 
   for (const [k, v] of Object.entries(patch)) {
     up.run(k, JSON.stringify(v), writer);
   }
+}
+
+/* ---------- 配对设备（v0.4，docs/04 §访问控制） ---------- */
+
+export interface Device {
+  deviceId: string;
+  name: string;
+  token: string;
+  createdAt: string;
+  lastSeenAt: string | null;
+}
+
+export function insertDevice(store: Store, d: Device): void {
+  store.db
+    .prepare(
+      `INSERT INTO devices (device_id,name,token,created_at,last_seen_at)
+       VALUES (@deviceId,@name,@token,@createdAt,@lastSeenAt)`,
+    )
+    .run({
+      deviceId: d.deviceId,
+      name: d.name,
+      token: d.token,
+      createdAt: d.createdAt,
+      lastSeenAt: d.lastSeenAt ?? null,
+    });
+}
+
+export function findDeviceByToken(store: Store, token: string): Device | null {
+  const row = store.db.prepare('SELECT * FROM devices WHERE token=?').get(token) as any;
+  if (!row) return null;
+  return {
+    deviceId: row.device_id,
+    name: row.name,
+    token: row.token,
+    createdAt: row.created_at,
+    lastSeenAt: row.last_seen_at ?? null,
+  };
+}
+
+export function listDevices(store: Store): Omit<Device, 'token'>[] {
+  const rows = store.db.prepare('SELECT device_id,name,created_at,last_seen_at FROM devices ORDER BY created_at').all() as any[];
+  return rows.map((row) => ({
+    deviceId: row.device_id,
+    name: row.name,
+    createdAt: row.created_at,
+    lastSeenAt: row.last_seen_at ?? null,
+  }));
+}
+
+/** 撤销设备（物理删除；token 随即失效）。返回是否命中。 */
+export function deleteDevice(store: Store, deviceId: string): boolean {
+  const r = store.db.prepare('DELETE FROM devices WHERE device_id=?').run(deviceId);
+  return r.changes > 0;
+}
+
+export function touchDevice(store: Store, deviceId: string): void {
+  store.db.prepare('UPDATE devices SET last_seen_at=? WHERE device_id=?').run(new Date().toISOString(), deviceId);
 }
 
 /* ---------- 备份 ---------- */

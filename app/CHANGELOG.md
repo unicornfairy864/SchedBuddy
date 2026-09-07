@@ -2,6 +2,18 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.14] - 2026-09-07
+
+### Added（v0.4 移动端 0.4.3：服务端 PIN 配对 + token 写权限）
+- **server**：DB 迁移 v5 新增 `devices` 表（deviceId/name/token/createdAt/lastSeenAt）+ 设备 CRUD helpers；
+- 新增 `src/pairing.ts`：一次性 6 位 PIN（默认 10 分钟有效、单次、进程内存）与 256-bit 设备 token；
+- 新端点：`POST /api/pin`（仅回环）、`POST /api/pair`（PIN → `201 {deviceId, token}`，错/过期 `403 badpin`）、`GET /api/devices` 与 `DELETE /api/devices/:id`（仅回环，撤销即失效）；
+- **写守卫改造**（v0.4 口径）：回环 或 有效 `Bearer token` 可写；坏/已撤销 token → `401`；未配对 LAN → `403 readonly`；写入方记录 `lastWriter`（`'pc'` 或设备 id）；
+- **web**：设置面板新增「移动设备配对」区（生成/刷新 PIN 大字展示、已配设备列表、撤销）；
+- **mobile**：`src/host.ts` 增加配对凭证持久化（deviceId/token）、`src/api.ts` 增加 `pairDevice`；App 设置页新增 PIN 输入配对与解除配对，首页显示配对状态；
+- 文档：`04-api.md` 访问控制/端点表/错误码更新为 v0.4 现状；`项目说明.md` 补录 v0.4 进度。
+- 验证：curl 端到端（配对/403/401/撤销后 401/回环豁免）全通过；`npm test`（引擎 15 + ics 10）通过；web build 通过；mobile `tsc` 通过。
+
 ## [0.3.13] - 2026-09-07
 
 ### Added（v0.4 移动端 0.4.2：主机连接与设置）
