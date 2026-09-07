@@ -2,6 +2,15 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.13] - 2026-09-07
+
+### Added（v0.4 移动端 0.4.2：主机连接与设置）
+- `app/mobile` 接入 `@schedbuddy/shared`（引擎真实复用：`todayStr()` + `weekIndexOf()` 计算「今天是第 N 周」，与 Web 同源）；
+- 新增 `src/host.ts`（主机地址规范化 + AsyncStorage 持久化，端口默认 3876）、`src/api.ts`（`GET /api/meta` 连接测试，超时 4s，错误分 timeout/network/http/badjson）；
+- `App.tsx` 双屏改造：首页（主机地址 / 连接状态 / 第 N 周）+「主机设置」页（输入 → 保存并连接）；tsconfig 补 `types:["node"]`；
+- 依赖新增 `@react-native-async-storage/async-storage@2.2.0`（Expo SDK 57 官方推荐版本）。
+- 验证：`tsc --noEmit` 零错误；Metro 589 模块打包通过；产出可直装 debug APK（65.6 MB）；桌面端 win-unpacked 重打包冒烟通过（`0.0.0.0:3876` 正常监听）。
+
 ## [0.3.12] - 2026-09-07
 
 ### Added（v0.4 起步 · Android 移动端工程骨架 0.4.1）

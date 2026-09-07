@@ -5,6 +5,7 @@
   "description": "SchedBuddy 移动端（Android · React Native + TS）：v0.4 起接入，复用 @schedbuddy/shared 引擎与布局计算。",
   "main": "index.ts",
   "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.20",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
@@ -16,8 +17,8 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "typecheck": "tsc --noEmit"
   }
 }
