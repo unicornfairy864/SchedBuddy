@@ -1,6 +1,6 @@
 {
   "name": "schedbuddy",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "private": true,
   "description": "SchedBuddy 大学生时间管理：桌面(Electron)+局域网Web双端，单用户日程可视化。",
   "main": "desktop/dist/main.cjs",
@@ -8,7 +8,8 @@
     "shared",
     "server",
     "web",
-    "desktop"
+    "desktop",
+    "mobile"
   ],
   "engines": {
     "node": ">=20"
@@ -25,7 +26,8 @@
     "desktop": "node scripts/build.mjs desktop && electron .",
     "dist:dir": "node scripts/build.mjs desktop && electron-builder --dir --win -c electron-builder.yml && node scripts/copy-node.cjs",
     "dev:server": "node scripts/build.mjs server && node --watch server/dist/index.cjs",
-    "dev:web": "npm run dev --workspace web"
+    "dev:web": "npm run dev --workspace web",
+    "dev:mobile": "npm run start --workspace mobile"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",

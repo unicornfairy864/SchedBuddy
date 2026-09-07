@@ -1,0 +1,23 @@
+{
+  "name": "@schedbuddy/mobile",
+  "version": "0.4.0",
+  "private": true,
+  "description": "SchedBuddy 移动端（Android · React Native + TS）：v0.4 起接入，复用 @schedbuddy/shared 引擎与布局计算。",
+  "main": "index.ts",
+  "dependencies": {
+    "expo": "~57.0.20",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit"
+  }
+}

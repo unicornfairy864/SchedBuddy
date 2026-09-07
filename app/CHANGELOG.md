@@ -2,6 +2,14 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.12] - 2026-09-07
+
+### Added（v0.4 起步 · Android 移动端工程骨架 0.4.1）
+- 新增 `app/mobile` workspace（`@schedbuddy/mobile` v0.4.0）：Expo SDK 57 + React Native 0.86.3 + React 19.2.3 + TypeScript 6.0.3；`android.package` 锚定 `com.schedbuddy.app`（供后续 prebuild）。
+- 根工程 workspaces 接入 `mobile`，新增脚本 `dev:mobile`；`App.tsx` 为 SchedBuddy · v0.4 占位首屏。
+- 验证通过：`tsc --noEmit` 零错误；`expo export --platform android` Metro 打包成功（580 模块，1.4MB hbc）。
+- 开发环境就绪：Android SDK `D:\AndroidSDK`（Platform 37 / Build-Tools 36 / NDK 30 / CMake）、JDK 17。
+
 ## [0.3.11] - 2026-09-07
 
 ### Changed（文档同步收尾 · 无功能代码变更）
