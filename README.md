@@ -27,7 +27,7 @@
 Electron + React + TypeScript + Vite + Node(Express) + SQLite(better-sqlite3)，npm workspaces 单仓库。
 桌面端 = 常驻主机（内置后端 + 数据库）；局域网设备通过浏览器访问同一份数据（只读）。
 
-## 本地运行（当前 v0.3.x：PC/Web 编辑核心已定版）
+## 本地运行（当前 v0.4.0：PC/Web 编辑核心（v0.3）+ Android 移动端骨架（v0.4）已定版）
 
 ```powershell
 cd app
@@ -40,8 +40,8 @@ npm test             # 规则引擎自测（15 组）
 
 - 数据自动存入 `app/data/schedbuddy.db`（不入库，含自动备份）。
 - 开发模式：`npm run dev:server`（服务热更）+ 新终端 `npm run dev:web`（Vite 5173 代理 /api）。
-- 本机为唯一写端（新建/编辑/删除、设置）；局域网浏览器只读。
-- **路线规划（v0.4 起，详见 `app/docs/00-decisions.md` §5 与 `app/docs/01-architecture.md` §5）**：v0.4 = Android App（RN）骨架（局域网直连 + PIN 配对）；v0.5 = App 离线工作区 + 手动 pull/push/merge 同步。
+- 本机与**已 PIN 配对的 App** 可写；局域网浏览器只读（v0.4 起，见 `app/docs/04-api.md`）。
+- **路线规划**：✅ **v0.4**（已定版，2026-09-08）= Android App（Expo RN+TS）骨架：局域网直连只读周/日视图 + PIN 配对（详见 `app/docs/00-decisions.md` §5 与 `01-architecture.md` §5）；**下一优先 v0.5** = App 离线工作区（内置 SQLite）+ 手动 pull/push/merge 同步。
 
 ## 桌面端（Electron）· 环境切换与打包
 

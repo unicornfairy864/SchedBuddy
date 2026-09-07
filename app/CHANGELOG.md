@@ -2,6 +2,16 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.4.0] - 2026-09-08
+
+### Released（里程碑 v0.4：Android 移动端骨架 —— 局域网只读 + PIN 配对 · 用户授权定版）
+- **0.4.1 工程骨架**：新增 `app/mobile` workspace（Expo SDK 57 / RN 0.86.3 / React 19 / TS 6；android.package `com.schedbuddy.app`），接入根 workspaces；Metro 打包验证。
+- **0.4.2 复用与配置**：接入 `@schedbuddy/shared`（展开/日期引擎同源复用）；主机地址设置（AsyncStorage 持久化）+ `/api/meta` 连接测试。
+- **0.4.3 服务端配对**：DB 迁移 v5 `devices` 表；`POST /api/pin`（回环、一次性 10 分钟）、`POST /api/pair`（PIN→deviceId+token）、`GET|DELETE /api/devices`；写守卫改「回环 或 有效 Bearer token」（LAN 无 token 403 / 坏与已撤销 401 / writer 记设备 id）；Web 设置面板「移动设备配对」区。
+- **0.4.4 只读周/日视图 + 双端日历**：App 自动连主机、周/日切换、点击日程显备注；Web 与 App 顶栏日期改圆角钮 → 弹出**周历/日历**（周=整周深绿圆角框、日=单日圆点、今天去粗体仅颜色）；**视图形态定案：移动端纵向日卡列表（不移植横向时间轴，见 ADR v0.3.17）**。
+- 交付物：可直装 debug APK；桌面端 win-unpacked 随代码重打包冒烟通过。
+- 详见下方 v0.3.12–0.3.17 各条目与 `docs/项目说明.md` §二。
+
 ## [0.3.17] - 2026-09-08
 
 ### Changed（移动端视图形态定案：取消时间轴移植 · 纯文档/决策，无代码变更）
