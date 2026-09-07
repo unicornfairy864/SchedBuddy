@@ -2,6 +2,14 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.9] - 2026-09-06
+
+### Added（iCalendar 对接 · A1 RFC 5545 + A2 RFC 6868）
+- shared 新增 `src/ics/`：文本/参数转义与折叠（A2）、`scheduleToIcs`（编码：weekly/interval/once、单双周 INTERVAL=2、总数量显式 RDATE、skip/move→EXDATE/RDATE、每段独立 VEVENT）、`parseIcs`（支持子集 + 忽略清单）、`eventsToSchedules`（按 X-SCHEDBUDDY-GROUP 合并重建）。
+- 口径：floating 时间、多时段分段、颜色/分组走 X- 属性（详见新增 `docs/09-icalendar.md`）。
+- 自测：`tests/ics.test.cjs` 10 组（含 RFC 6868 caret、多字节折叠、往返重建、不支持项忽略）；`npm test` 现在串联 引擎+ics。
+- UI 入口（设置→数据管理 .ics 导出/导入）与 server 端点待用户 UI 方案后接线。
+
 ## [0.3.8] - 2026-09-05
 
 ### Fixed（局域网地址误显示 VPN 虚拟网卡）

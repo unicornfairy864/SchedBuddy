@@ -1,6 +1,6 @@
 {
   "name": "schedbuddy",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "private": true,
   "description": "SchedBuddy 大学生时间管理：桌面(Electron)+局域网Web双端，单用户日程可视化。",
   "main": "desktop/dist/main.cjs",
@@ -14,7 +14,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node tests/engine.test.cjs",
+    "test": "node tests/engine.test.cjs && node tests/ics.test.cjs",
     "seed:demo": "node tests/seed-demo.cjs",
     "build:shared": "node scripts/build.mjs shared",
     "build:server": "node scripts/build.mjs server",

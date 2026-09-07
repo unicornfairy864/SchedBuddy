@@ -4,3 +4,5 @@ export * from './validate';
 export * from './expand';
 export * from './conflict';
 export * from './pack';
+export * from './ics';
+
