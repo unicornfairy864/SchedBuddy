@@ -1,6 +1,6 @@
 # 04 · API 约定
 
-> 状态：生效　·　最近更新：v0.3.5（2026-09-05）　·　规范：`07-doc-standards.md`
+> 状态：生效　·　最近更新：v0.3.10（2026-09-06）　·　规范：`07-doc-standards.md`
 
 Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟或 `HH:mm`（见各接口）。错误统一 `{ error: string, details?: unknown }`。
 
@@ -26,6 +26,8 @@ Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟�
 | GET/PUT | `/api/settings` | `{ termStart?, termEnd?, weekCount?, holidays?, ui? }` |
 | GET | `/api/export` | 全量 JSON：`{ version, exportedAt, settings, schedules }`（schedules = 在册全部；settings 全键），供备份/迁移 |
 | POST | `/api/import` | 导入备份 JSON（合并式）：逐条校验通过的 schedule 按 id **覆盖/复活**（清墓碑、rev+1）或新增；`settings` 并入；文件外的既有日程保留。返回 `{ ok, failed, bad:[{title?,issues}] }` |
+| GET | `/api/export.ics?from=&to=` | 导出 iCalendar（RFC 5545）文本（`text/calendar` 下载）；缺省 from=今天、to=+365 天；映射见 `09-icalendar.md` |
+| POST | `/api/import.ics` | 导入 iCalendar 文本（body `{text}`）：支持子集重建为日程并按 id 覆盖/新增；返回 `{ ok, failed, bad, ignored[] }`（不支持项忽略并报告） |
 
 服务端保存流程：`validateSchedule`（shared）→ 冲突检测 `detectConflicts`（shared，窗口 = 该日程可能影响范围，缺省 ±1 年）→ 策略判定 → 写库。
 
