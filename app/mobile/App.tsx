@@ -222,7 +222,7 @@ function Settings(props: {
   const { host, device, input, pairPin, ioBusy, onChangeInput, onChangePin, onSaveHost, onPair, onUnpair, onBack } = props;
   return (
     <ScrollView style={styles.innerScroll} contentContainerStyle={styles.inner}>
-      <Text style={styles.h1}>主机设置</Text>
+      <Text style={[styles.h1, styles.h1Top]}>主机设置</Text>
       <Text style={styles.help}>
         填写运行 SchedBuddy 的电脑在局域网中的地址（桌面/网页端页脚可查看）。端口默认 {DEFAULT_PORT}，可省略。
       </Text>
@@ -274,7 +274,7 @@ function Settings(props: {
             onSubmitEditing={onPair}
           />
           <Pressable
-            style={[styles.btnPrimary, (!pairPin || ioBusy) && styles.btnDisabled]}
+            style={[styles.btnPrimary, styles.btnBlock, (!pairPin || ioBusy) && styles.btnDisabled]}
             onPress={onPair}
             disabled={!pairPin || ioBusy}
           >
@@ -303,6 +303,7 @@ const styles = StyleSheet.create({
   logo: { fontSize: 40, fontWeight: '700', color: '#14532D', letterSpacing: 0.5 },
   sub: { marginTop: 6, fontSize: 15, color: '#4B7B5C' },
   h1: { fontSize: 24, fontWeight: '700', color: '#14532D', marginBottom: 12, alignSelf: 'flex-start' },
+  h1Top: { marginTop: 24 },
   help: { fontSize: 14, color: '#5B6B60', lineHeight: 21, marginBottom: 16, alignSelf: 'flex-start' },
   card: {
     backgroundColor: '#FFFFFF',
@@ -340,6 +341,7 @@ const styles = StyleSheet.create({
   },
   btnGhostText: { color: '#2F855A', fontSize: 15, fontWeight: '600' },
   btnDisabled: { opacity: 0.5 },
+  btnBlock: { flex: 0, width: '100%' },
   input: {
     width: '100%',
     backgroundColor: '#FFFFFF',
@@ -361,6 +363,6 @@ const styles = StyleSheet.create({
     padding: 14,
     alignItems: 'center',
   },
-  unpairBtn: { marginTop: 12, alignSelf: 'stretch' },
+  unpairBtn: { marginTop: 12, alignSelf: 'stretch', flex: 0 },
   footer: { fontSize: 11, color: '#9DB3A4', marginTop: 24, textAlign: 'center', alignSelf: 'center' },
 });

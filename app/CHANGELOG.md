@@ -2,6 +2,13 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.15] - 2026-09-07
+
+### Fixed（移动端设置页样式）
+- 「主机设置」标题顶部留白加倍（`marginTop:24`）；
+- 修复配对/解除配对按钮样式错误：纵向布局下 `flex:1` 使按钮坍缩 → 改为 `flex:0` + 全宽块级；
+- 验收通过（手机实机）；APK 已随附更新（`schedbuddy-0.4.3-debug.apk`）。
+
 ## [0.3.14] - 2026-09-07
 
 ### Added（v0.4 移动端 0.4.3：服务端 PIN 配对 + token 写权限）
