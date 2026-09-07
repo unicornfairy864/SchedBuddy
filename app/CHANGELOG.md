@@ -2,6 +2,15 @@
 
 版本规则见 `docs/05-versioning.md`。格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.3.11] - 2026-09-07
+
+### Changed（文档同步收尾 · 无功能代码变更）
+- 补录 v0.3.9–0.3.10（iCalendar 接线）的文档跟进，落实「文档 = 现状」：
+  - `README.md`：文档入口索引补 iCalendar 对接说明（`09-icalendar.md`）；
+  - `04-api.md`：补 `.ics` 导出/导入端点约定；`09-icalendar.md` 状态行同步至 v0.3.10；
+  - `项目说明.md`：状态行/文档索引补 `09`，已完成章节补录 v0.3.9–0.3.10。
+- `项目说明.md`「未来规划」：移除已定版归档的 v0.3 行，路线表自 v0.4（Android App 骨架）起；总纲技术细节系列索引修正为 `00~09`。
+
 ## [0.3.10] - 2026-09-06
 
 ### Added（iCalendar 接线：server 端点 + 数据管理 UI）
