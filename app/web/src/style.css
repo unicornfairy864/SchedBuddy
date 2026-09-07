@@ -62,13 +62,61 @@ body {
 
 .mid { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 16px; }
 .nav { display: flex; align-items: center; gap: 9px; }
-.range {
-  margin-left: 10px; font-weight: 600; font-size: 16px; color: var(--text);
-  white-space: nowrap; display: inline-flex; align-items: baseline;
+.range-wrap { position: relative; margin-left: 10px; }
+/* 日期标题 = 圆角胶囊按钮，点击弹出日历（周历/日历） */
+.range-btn {
+  font-family: inherit; font-size: 15px; font-weight: 600; color: var(--text);
+  background: #fff; border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px 14px; display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color .15s, box-shadow .15s;
 }
-/* 日期段与周次段分离：窄屏先省略日期段，第N周常驻 */
+.range-btn:hover { border-color: var(--accent); box-shadow: 0 2px 10px rgba(31, 63, 95, .1); }
+.range-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .range-dates { display: inline-block; white-space: nowrap; }
-.range-week { display: inline-block; white-space: nowrap; }
+.range-week {
+  display: inline-block; white-space: nowrap;
+  background: var(--accent); color: #fff; font-size: 12px; font-weight: 600;
+  padding: 1px 8px; border-radius: 999px; line-height: 1.7;
+}
+/* 弹出日历（周/日两种选择：点日期 → 跳到所在周 / 直达该日） */
+.cal-pop {
+  position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  width: 264px; background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(31, 63, 95, .16); padding: 10px; z-index: 60;
+  user-select: none;
+}
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.cal-title { font-size: 14.5px; font-weight: 700; color: var(--text); }
+.cal-nav {
+  width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line);
+  background: #fff; color: var(--text2); font-size: 16px; cursor: pointer; line-height: 1;
+}
+.cal-nav:hover { border-color: var(--accent); color: var(--accent); }
+.cal-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
+.cal-week span { text-align: center; font-size: 12px; color: var(--text2); padding: 4px 0; }
+.cal-grid { display: flex; flex-direction: column; gap: 4px; }
+.cal-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+/* 周视图：当前周 = 整行一个深绿圆角框（容纳 7 天） */
+.cal-row.is-sel {
+  border: 1.5px solid var(--accent); border-radius: 14px;
+  background: #f4faf7; padding: 1px 0;
+}
+.cal-cell {
+  aspect-ratio: 1; border: none; background: transparent;
+  font-size: 13.5px; color: var(--text); cursor: pointer;
+  border-radius: 50%; display: grid; place-items: center;
+}
+.cal-cell:hover { background: #eef6f3; }
+.cal-cell.muted { color: #c2ccc7; }
+/* 框内今天 / 一般今天：仅以颜色区分（不加粗） */
+.cal-cell.is-today { color: var(--accent); }
+/* 实心圆点 = 选中日的强调（周视图框内今天 / 日视图选中日） */
+.cal-cell.is-dot { background: var(--accent); color: #fff; }
+.cal-hint {
+  margin-top: 8px; font-size: 12px; color: var(--text2); text-align: center;
+  border-top: 1px solid #eef2f7; padding-top: 7px;
+}
 .right { flex: none; display: flex; align-items: center; gap: 12px; }
 
 .seg {
@@ -413,7 +461,8 @@ body {
   .nav { gap: 6px; }
   .nav .icon-btn { padding: 5px 10px; font-size: 17px; }
   .nav .btn { padding: 7px 12px; font-size: 14.5px; }
-  .range { margin-left: 8px; font-size: 14px; }
+  .range-wrap { margin-left: 6px; }
+  .range-btn { font-size: 13.5px; padding: 5px 12px; gap: 6px; }
   .right { gap: 8px; }
   .btn.primary { padding: 7px 13px; font-size: 14.5px; }
 }
@@ -444,7 +493,7 @@ body {
   .seg button { padding: 5px 12px; font-size: 14px; }
   .nav .icon-btn { padding: 4px 8px; font-size: 16px; }
   .nav .btn { padding: 6px 9px; font-size: 13.5px; }
-  .range { font-size: 13px; }
+  .range-btn { font-size: 13px; padding: 4px 10px; }
   .range-dates { max-width: 30vw; }
 }
 
@@ -460,8 +509,14 @@ body {
 
 /* 空间不足：先省略日期段（08/31 – 09/06），保留「第N周」；无周次时日期段回退显示 */
 @media (max-width: 430px) {
-  .range-dates { display: none; }
-  .range.no-week .range-dates { display: inline-block; max-width: 38vw; }
+  .range-btn .range-dates { display: none; }
+  .range-btn.no-week { max-width: 52vw; }
+  .range-btn.no-week .range-dates {
+    display: inline-block; max-width: 38vw;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  /* 窄屏下日历弹层贴右，避免溢出视口 */
+  .cal-pop { left: auto; right: 0; transform: none; }
 }
 
 /* 极窄(<300px)：才隐藏 SchedBuddy 与版本号，仅保留品牌 Logo */

@@ -1,4 +1,5 @@
 /** SchedBuddy 主机 REST 客户端（v0.4 只读 · 最小集） */
+import type { Schedule } from '@schedbuddy/shared';
 
 export interface Meta {
   version: string;
@@ -87,6 +88,33 @@ export async function fetchMeta(baseUrl: string, timeoutMs = 4000): Promise<Meta
       throw new MetaError('badjson', '响应格式不符（不是 SchedBuddy 主机？）');
     }
     return data;
+  } catch (e) {
+    if (e instanceof MetaError) throw e;
+    throw new MetaError('badjson', '响应不是有效 JSON');
+  }
+}
+
+/** GET /api/schedules（带超时）：全部在册日程（本地展开用，无需 occurrences 端点）。 */
+export async function fetchSchedules(baseUrl: string, timeoutMs = 6000): Promise<Schedule[]> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let res: Response;
+  try {
+    res = await fetch(`${baseUrl}/api/schedules`, { signal: ctrl.signal });
+  } catch (e) {
+    const timedOut = e instanceof Error && e.name === 'AbortError';
+    throw new MetaError(
+      timedOut ? 'timeout' : 'network',
+      timedOut ? `连接超时（${timeoutMs}ms）` : `无法连接：${e instanceof Error ? e.message : String(e)}`,
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) throw new MetaError('http', `HTTP ${res.status}`, res.status);
+  try {
+    const data = (await res.json()) as { schedules: Schedule[] };
+    if (!Array.isArray(data.schedules)) throw new MetaError('badjson', '响应格式不符');
+    return data.schedules;
   } catch (e) {
     if (e instanceof MetaError) throw e;
     throw new MetaError('badjson', '响应不是有效 JSON');

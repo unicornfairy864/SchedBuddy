@@ -308,11 +308,13 @@ export default function App() {
         view={view}
         readOnly={meta?.readOnly ?? true}
         version={meta?.version ?? '…'}
+        anchor={anchor}
         onView={setView}
         onPrev={() => nav(-1)}
         onNext={() => nav(1)}
         onToday={() => setAnchor(today)}
         onSettings={() => setSettingsOpen(true)}
+        onPickDate={(d) => setAnchor(d)}
       />
 
       <main className="board-scroll">
