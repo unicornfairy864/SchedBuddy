@@ -1,6 +1,6 @@
 # 04 · API 约定
 
-> 状态：生效　·　最近更新：v0.3.14（2026-09-07）　·　规范：`07-doc-standards.md`
+> 状态：生效　·　最近更新：v0.4.1（2026-09-08）　·　规范：`07-doc-standards.md`
 
 Base：`http://<host>:3876/api`。JSON；日期 `YYYY-MM-DD`，时间用分钟或 `HH:mm`（见各接口）。错误统一 `{ error: string, details?: unknown }`。
 
@@ -61,6 +61,12 @@ PIN 由主机端「设置 → 移动设备配对」生成（仅回环可调 `POS
 ## 端口与配置
 
 默认 `3876`；环境变量唯一来源为 `SCHEDBUDDY_PORT`（另有 `SCHEDBUDDY_DATA`、`SCHEDBUDDY_WEB`，见 `06-dev-conventions.md` §9）；与常见 3000/5173/3080 不冲突。
+
+## 主机发现与防火墙（v0.5 规划 · 见 `00-decisions.md` §5）
+
+- **发现**：桌面/网页主机（Express 常驻时）在局域网内**周期性 mDNS 公告**服务 `_schedbuddy._tcp.local`，端口 `3876`（`TXT` 可携带 `version`）；另发**UDP 广播**（如 3890）作辅助。Android App 首联自动扫描列表，用户点选即连；AP 隔离/组播被禁时回退**扫码（二维码含主机地址）**或手动 IP。
+- Android 需 **本地网络权限**（Android 11+ `ACCESS_NETWORK_STATE`/`CHANGE_WIFI_MULTICAST_STATE` 运行时授权）。
+- **防火墙自动放行（仅桌面/主机，Windows）**：NSIS 安装器（提权）或首次运行（一次 UAC）执行 `netsh advfirewall firewall add rule`（或 `New-NetFirewallRule`）放行 **TCP 入站 3876**（限定专用网络配置文件，可再限本地子网）；程序启动自检规则存在性。提权被拒/企业策略限制时回退：控制台/日志提示用户手动放行（见 `项目说明.md` / `00-decisions.md`）。
 
 ## 请求/响应示例
 

@@ -41,7 +41,7 @@ npm test             # 规则引擎自测（15 组）
 - 数据自动存入 `app/data/schedbuddy.db`（不入库，含自动备份）。
 - 开发模式：`npm run dev:server`（服务热更）+ 新终端 `npm run dev:web`（Vite 5173 代理 /api）。
 - 本机与**已 PIN 配对的 App** 可写；局域网浏览器只读（v0.4 起，见 `app/docs/04-api.md`）。
-- **路线规划**：✅ **v0.4**（已定版，2026-09-08）= Android App（Expo RN+TS）骨架：局域网直连只读周/日视图 + PIN 配对（详见 `app/docs/00-decisions.md` §5 与 `01-architecture.md` §5）；**下一优先 v0.5** = App 离线工作区（内置 SQLite）+ 手动 pull/push/merge 同步。
+- **路线规划**：✅ **v0.4**（已定版，2026-09-08）= Android App（Expo RN+TS）骨架：局域网直连只读周/日视图 + PIN 配对；**下一优先 v0.5**（v0.4.1 修订）＝ **本地优先独立版**：App 离线全功能（内置 SQLite 为本地权威副本）+ 局域网自动发现主机（mDNS，回退扫码/手动）+ 与桌面双向手动 pull/push/merge；桌面 Windows 防火墙自动放行（详见 `app/docs/00-decisions.md` §5 与 `01-architecture.md` §5）。
 
 ## 桌面端（Electron）· 环境切换与打包
 
